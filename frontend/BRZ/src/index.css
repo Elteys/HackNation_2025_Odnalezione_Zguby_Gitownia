@@ -64,8 +64,26 @@ body.high-contrast a {
 }
 
 /* Focus w kontraście */
-body.high-contrast *:focus-visible {
-  outline: 4px solid #ffff00 !important;
-  outline-offset: 4px !important;
-  box-shadow: none !important;
+body.high-contrast button:hover svg,
+body.high-contrast a:hover svg,
+body.high-contrast select:hover~svg,
+/* Ikona w selectach */
+body.high-contrast .group:hover svg {
+  /* Ikona w kartach na Home */
+  filter: none !important;
+  /* Wyłącz grayscale */
+  stroke: #ffff00 !important;
+  /* Wymuś czarny obrys */
+  color: #ffff00 !important;
+  /* Wymuś czarny kolor */
+}
+
+/* Dodatkowo: Aktywne inputy w kontraście powinny mieć czarny tekst na żółtym tle */
+body.high-contrast input:focus,
+body.high-contrast textarea:focus,
+body.high-contrast select:focus {
+  background-color: #ffff00 !important;
+  color: #000000 !important;
+  border-color: #ffffff !important;
+  /* Biała ramka dla odróżnienia */
 }

@@ -1,6 +1,8 @@
 import React from 'react';
-import { HashRouter as Router, Routes, Route } from 'react-router-dom';
+import { HashRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
+import { AnimatePresence } from 'framer-motion'; // <--- Import
 import { FormProvider } from './context/FormContext';
+import { AccessibilityProvider } from './context/AccessibilityContext';
 
 // Layout
 import Navbar from './components/layout/Navbar';
@@ -10,22 +12,42 @@ import Footer from './components/layout/Footer';
 import Home from './pages/Home';
 import FormPage from './pages/FormPage';
 import SummaryPage from './pages/SummaryPage';
-import { AccessibilityProvider } from './context/AccessibilityContext';
+
+// Transition Wrapper
+import PageTransition from './components/layout/PageTransition'; // <--- Import
+
+// Osobny komponent dla Routes, żeby użyć useLocation()
+const AnimatedRoutes = () => {
+  const location = useLocation();
+
+  return (
+    // mode="wait" oznacza: najpierw schowaj starą stronę, potem pokaż nową
+    <AnimatePresence mode="wait">
+      <Routes location={location} key={location.pathname}>
+        <Route path="/" element={
+          <PageTransition><Home /></PageTransition>
+        } />
+        <Route path="/formularz" element={
+          <PageTransition><FormPage /></PageTransition>
+        } />
+        <Route path="/podsumowanie" element={
+          <PageTransition><SummaryPage /></PageTransition>
+        } />
+      </Routes>
+    </AnimatePresence>
+  );
+};
 
 function App() {
   return (
     <AccessibilityProvider>
       <FormProvider>
         <Router>
-          <div className="flex flex-col min-h-screen bg-slate-50 font-sans">
+          <div className="flex flex-col min-h-screen bg-slate-50 font-sans transition-colors duration-300">
             <Navbar />
 
-            <main className="grow w-full max-w-5xl mx-auto p-4 sm:p-6 lg:p-8">
-              <Routes>
-                <Route path="/" element={<Home />} />
-                <Route path="/formularz" element={<FormPage />} />
-                <Route path="/podsumowanie" element={<SummaryPage />} />
-              </Routes>
+            <main className="flex-grow w-full max-w-5xl mx-auto p-4 sm:p-6 lg:p-8 overflow-hidden">
+              <AnimatedRoutes />
             </main>
 
             <Footer />
