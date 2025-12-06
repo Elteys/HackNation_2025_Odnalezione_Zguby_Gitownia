@@ -5,9 +5,14 @@ const FormContext = createContext();
 export const FormProvider = ({ children }) => {
     const [formData, setFormData] = useState({
         kategoria: '',
+        podkategoria: '',
         nazwa: '',
         opis: '',
-        kolor: '',
+        cechy: {  // <-- TO JEST WAŻNE
+            kolor: '',
+            marka: '',
+            stan: ''
+        },
         miejsce: '',
         data: new Date().toISOString().split('T')[0]
     });

@@ -1,21 +1,30 @@
 import OpenAI from "openai";
+import { KATEGORIE, STANY } from "../utils/dictionaries";
 
 const openai = new OpenAI({
     apiKey: import.meta.env.VITE_OPENAI_API_KEY,
     dangerouslyAllowBrowser: true
 });
 
+// Generujemy tekst słownika dla AI
+const slownikPrompt = Object.entries(KATEGORIE)
+    .map(([kat, podkaty]) => `- ${kat}: ${podkaty.join(", ")}`)
+    .join("\n");
+
+const stanyPrompt = STANY.join(", ");
+
+// Wzorzec XML (prosty i czytelny)
 const xmlStructure = `
 <Zgloszenie>
   <Przedmiot>
-    <Kategoria>ELEKTRONIKA lub DOKUMENTY lub ODZIEZ lub INNE</Kategoria>
-    <Podkategoria>np. Telefon</Podkategoria>
-    <Nazwa>Krótka nazwa</Nazwa>
-    <Opis>Szczegółowy opis</Opis>
+    <Kategoria>Tutaj wpisz KATEGORIĘ GŁÓWNĄ (wielkimi literami)</Kategoria>
+    <Podkategoria>Tutaj wpisz Podkategorię</Podkategoria>
+    <Nazwa>Krótka nazwa przedmiotu</Nazwa>
+    <Opis>Szczegółowy opis wizualny</Opis>
     <Cechy>
        <Kolor>np. czarny</Kolor>
        <Marka>np. Samsung</Marka>
-       <Stan>np. uszkodzony</Stan>
+       <Stan>np. Używany</Stan>
     </Cechy>
   </Przedmiot>
 </Zgloszenie>
@@ -23,62 +32,47 @@ const xmlStructure = `
 
 export const analyzeImage = async (base64Image) => {
     try {
+        console.log("Wysyłam zapytanie do OpenAI...");
+
         const response = await openai.chat.completions.create({
             model: "gpt-4o",
             messages: [
                 {
                     role: "system",
-                    content: `Jesteś asystentem w biurze rzeczy znalezionych.
-Twoim zadaniem jest analiza zdjęcia i zwrócenie wyłącznie kodu XML zgodnego ze wzorcem dostarczonym w zmiennej poniżej.
+                    content: `Jesteś API, które analizuje zdjęcia zgubionych rzeczy.
+                    Twoim zadaniem jest zwrócić TYLKO I WYŁĄCZNIE kod XML.
+                    Nie dodawaj żadnych znaczników Markdown (typu \`\`\`xml). Nie pisz "Oto XML".
 
-Skup się wyłącznie na opisie fizycznego przedmiotu widocznego na zdjęciu.
-Ignoruj całkowicie:
+                    SŁOWNIK KATEGORII (TRZYMAJ SIĘ GO ŚCIŚLE):
+                    ${slownikPrompt}
+                    
+                    SŁOWNIK STANÓW: ${stanyPrompt}
 
-tło i otoczenie (rośliny, meble, kubki, dekoracje itp.)
-
-inne przedmioty, które ewidentnie nie są głównym obiektem zdjęcia
-
-to, co jest tymczasowe lub zmienne (np. zawartość ekranu urządzeń, naklejki tymczasowe, powiadomienia, dokumenty leżące obok itp.)
-
-Opisuj jedynie stałe, trwałe cechy głównego przedmiotu takie jak:
-
-kształt, materiał
-
-kolor
-
-marka / model, jeśli widoczne
-
-elementy konstrukcyjne
-
-widoczne uszkodzenia
-
-rozmiar orientacyjny
-
-dodatkowe elementy fizyczne będące częścią przedmiotu
-
-Nie opisuj tego, co jest na ekranie, co leży obok, ani co tworzy tło zdjęcia.
-Nie twórz historii, domysłów ani funkcji przedmiotu — tylko wygląd.
-
-Zwróć czysty XML, bez żadnych znaczników Markdown ani komentarzy.
-
-Na końcu komunikatu znajduje się zmienna z dostarczonym wzorcem XML, którego masz bezwzględnie użyć. ${xmlStructure}`
+                    WZORZEC XML:
+                    ${xmlStructure}`
                 },
                 {
                     role: "user",
                     content: [
-                        { type: "text", text: "Przeanalizuj to zdjęcie i wypełnij XML." },
-                        {
-                            type: "image_url",
-                            image_url: {
-                                "url": base64Image,
-                            },
-                        },
+                        { type: "text", text: "Przeanalizuj to i wypełnij XML." },
+                        { type: "image_url", image_url: { "url": base64Image } },
                     ],
                 },
             ],
         });
 
-        return response.choices[0].message.content;
+        const rawContent = response.choices[0].message.content;
+        console.log("Surowa odpowiedź AI:", rawContent);
+
+        // --- CZYSZCZENIE ODPOWIEDZI ---
+        // To naprawia problem "nic nie wypełnia"
+        const cleanContent = rawContent
+            .replace(/```xml/g, '') // Usuń znacznik początku kodu
+            .replace(/```/g, '')    // Usuń znacznik końca kodu
+            .trim();                // Usuń spacje
+
+        return cleanContent;
+
     } catch (error) {
         console.error("Błąd OpenAI:", error);
         throw error;

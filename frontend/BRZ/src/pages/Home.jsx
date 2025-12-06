@@ -20,16 +20,51 @@ const Home = () => {
 
     // Parsowanie XML
     const parseXML = (xmlString) => {
-        const parser = new DOMParser();
-        const xmlDoc = parser.parseFromString(xmlString, "text/xml");
-        const getText = (tag) => xmlDoc.getElementsByTagName(tag)[0]?.textContent || "";
+        try {
+            console.log("Parsuję XML:", xmlString);
+            const parser = new DOMParser();
+            const xmlDoc = parser.parseFromString(xmlString, "text/xml");
 
-        updateData({
-            kategoria: getText("Kategoria") || "INNE",
-            nazwa: getText("Nazwa"),
-            opis: getText("Opis"),
-            kolor: getText("Kolor")
-        });
+            // Sprawdzenie błędów XML
+            if (xmlDoc.getElementsByTagName("parsererror").length > 0) {
+                console.error("Błąd struktury XML!");
+                return;
+            }
+
+            // Bezpieczne pobieranie tekstu (zabezpieczenie przed nullem)
+            const getText = (tag) => {
+                const el = xmlDoc.getElementsByTagName(tag)[0];
+                return el ? el.textContent.trim() : "";
+            };
+
+            // Budujemy obiekt danych
+            // WAŻNE: Struktura musi pasować do Twojego FormContext!
+            const newData = {
+                kategoria: getText("Kategoria").toUpperCase(),
+                podkategoria: getText("Podkategoria"),
+                nazwa: getText("Nazwa"),
+                opis: getText("Opis"),
+                // Uwaga: Jeśli w Context masz 'cechy' jako obiekt:
+                cechy: {
+                    kolor: getText("Kolor"),
+                    marka: getText("Marka"),
+                    stan: getText("Stan")
+                },
+                // Jeśli potrzebujesz płaskich danych do mapy/daty:
+                miejsce: "Do uzupełnienia",
+                data: new Date().toISOString().split('T')[0]
+            };
+
+            console.log("Wynik parsowania:", newData);
+
+            // Wysyłamy do Contextu
+            // Zakładam, że Twoja funkcja updateData obsługuje nadpisywanie całego obiektu
+            updateData(newData);
+
+        } catch (e) {
+            console.error("Critical Parse Error:", e);
+            alert("Nie udało się odczytać danych ze zdjęcia.");
+        }
     };
 
     const handleFileChange = async (e) => {
@@ -37,15 +72,17 @@ const Home = () => {
         if (!file) return;
 
         setLoading(true);
+        // Ustawiamy podgląd od razu
         setImagePreview(URL.createObjectURL(file));
 
         try {
             const base64 = await fileToBase64(file);
-            const xml = await analyzeImage(base64);
-            parseXML(xml);
-            navigate('/formularz');
+            const xml = await analyzeImage(base64); // Tu wywoła się AI
+            parseXML(xml); // Tu przetworzy się XML
+            navigate('/formularz'); // Przejście dalej
         } catch (err) {
-            alert("Błąd AI. Spróbuj ponownie.");
+            alert("Błąd połączenia z AI. Spróbuj ponownie.");
+            console.error(err);
         } finally {
             setLoading(false);
         }
