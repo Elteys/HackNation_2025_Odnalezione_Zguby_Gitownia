@@ -12,25 +12,25 @@ import FormPage from './pages/FormPage';
 import SummaryPage from './pages/SummaryPage';
 
 function App() {
-  return (
-    <FormProvider>
-      <Router>
-        <div className="flex flex-col min-h-screen bg-slate-50 font-sans">
-          <Navbar />
+	return (
+		<FormProvider>
+			<Router>
+				<div className="flex flex-col min-h-screen bg-slate-50 font-sans">
+					<Navbar />
 
-          <main className="flex-grow w-full max-w-5xl mx-auto p-4 sm:p-6 lg:p-8">
-            <Routes>
-              <Route path="/" element={<Home />} />
-              <Route path="/formularz" element={<FormPage />} />
-              <Route path="/podsumowanie" element={<SummaryPage />} />
-            </Routes>
-          </main>
+					<main className="grow w-full max-w-5xl mx-auto p-4 sm:p-6 lg:p-8">
+						<Routes>
+							<Route path="/" element={<Home />} />
+							<Route path="/formularz" element={<FormPage />} />
+							<Route path="/podsumowanie" element={<SummaryPage />} />
+						</Routes>
+					</main>
 
-          <Footer />
-        </div>
-      </Router>
-    </FormProvider>
-  );
+					<Footer />
+				</div>
+			</Router>
+		</FormProvider>
+	);
 }
 
 export default App;
