@@ -6,25 +6,24 @@ const openai = new OpenAI({
     dangerouslyAllowBrowser: true
 });
 
-// Generujemy tekst słownika dla AI
+// Budujemy bardzo dokładną listę dla AI
 const slownikPrompt = Object.entries(KATEGORIE)
-    .map(([kat, podkaty]) => `- ${kat}: ${podkaty.join(", ")}`)
+    .map(([kat, podkaty]) => `KATEGORIA: "${kat}" -> PODKATEGORIE: [${podkaty.map(p => `"${p}"`).join(", ")}]`)
     .join("\n");
 
-const stanyPrompt = STANY.join(", ");
+const stanyPrompt = STANY.map(s => `"${s}"`).join(", ");
 
-// Wzorzec XML (prosty i czytelny)
 const xmlStructure = `
 <Zgloszenie>
   <Przedmiot>
-    <Kategoria>Tutaj wpisz KATEGORIĘ GŁÓWNĄ (wielkimi literami)</Kategoria>
-    <Podkategoria>Tutaj wpisz Podkategorię</Podkategoria>
-    <Nazwa>Krótka nazwa przedmiotu</Nazwa>
-    <Opis>Szczegółowy opis wizualny</Opis>
+    <Kategoria>NAZWA KATEGORII Z LISTY</Kategoria>
+    <Podkategoria>NAZWA PODKATEGORII Z LISTY</Podkategoria>
+    <Nazwa>Krótka nazwa</Nazwa>
+    <Opis>Opis fizyczny</Opis>
     <Cechy>
        <Kolor>np. czarny</Kolor>
        <Marka>np. Samsung</Marka>
-       <Stan>np. Używany</Stan>
+       <Stan>Jeden z: ${stanyPrompt}</Stan>
     </Cechy>
   </Przedmiot>
 </Zgloszenie>
@@ -32,45 +31,53 @@ const xmlStructure = `
 
 export const analyzeImage = async (base64Image) => {
     try {
-        console.log("Wysyłam zapytanie do OpenAI...");
+        console.log("Wysyłam zapytanie do OpenAI (Tryb Strict)...");
 
         const response = await openai.chat.completions.create({
             model: "gpt-4o",
             messages: [
                 {
                     role: "system",
-                    content: `Jesteś API, które analizuje zdjęcia zgubionych rzeczy.
-                    Twoim zadaniem jest zwrócić TYLKO I WYŁĄCZNIE kod XML.
-                    Nie dodawaj żadnych znaczników Markdown (typu \`\`\`xml). Nie pisz "Oto XML".
+                    content: `Jesteś robotem indeksującym. Analizujesz zdjęcie i zwracasz dane w XML.
 
-                    SŁOWNIK KATEGORII (TRZYMAJ SIĘ GO ŚCIŚLE):
-                    ${slownikPrompt}
+                    ZASADY KRYTYCZNE (JEŚLI ICH NIE SPEŁNISZ, SYSTEM SIĘ ZEPSUJE):
+                    1. Wybieraj wartości TYLKO I WYŁĄCZNIE z podanych list.
+                    2. NIE UŻYWAJ SYNONIMÓW (np. jeśli widzisz "Smartfon", a na liście jest "Telefon" -> wpisz "Telefon").
+                    3. Zachowaj WIELKOŚĆ LITER z list (np. "Telefon", nie "telefon").
                     
-                    SŁOWNIK STANÓW: ${stanyPrompt}
+                    DOSTĘPNE KATEGORIE I PODKATEGORIE:
+                    ${slownikPrompt}
+                    *Jeśli przedmiot nie pasuje do żadnej podkategorii, wybierz "Inne".*
 
-                    WZORZEC XML:
+                    DOSTĘPNE STANY:
+                    [${stanyPrompt}]
+
+                    ZASADY OPISU:
+                    - Ignoruj tło, ekrany laptopów/telefonów. Opisuj tylko fizyczny przedmiot.
+
+                    ZWROĆ TYLKO CZYSTY KOD XML WEDŁUG WZORCA:
                     ${xmlStructure}`
                 },
                 {
                     role: "user",
                     content: [
-                        { type: "text", text: "Przeanalizuj to i wypełnij XML." },
+                        { type: "text", text: "Dopasuj ten przedmiot do słownika i wypełnij XML." },
                         { type: "image_url", image_url: { "url": base64Image } },
                     ],
                 },
             ],
+            temperature: 0.0, // ZERO KREATYWNOŚCI = WYŻSZA ZGODNOŚĆ ZE SŁOWNIKIEM
         });
 
         const rawContent = response.choices[0].message.content;
-        console.log("Surowa odpowiedź AI:", rawContent);
 
-        // --- CZYSZCZENIE ODPOWIEDZI ---
-        // To naprawia problem "nic nie wypełnia"
+        // Czyszczenie
         const cleanContent = rawContent
-            .replace(/```xml/g, '') // Usuń znacznik początku kodu
-            .replace(/```/g, '')    // Usuń znacznik końca kodu
-            .trim();                // Usuń spacje
+            .replace(/```xml/g, '')
+            .replace(/```/g, '')
+            .trim();
 
+        console.log("Otrzymany XML:", cleanContent);
         return cleanContent;
 
     } catch (error) {
