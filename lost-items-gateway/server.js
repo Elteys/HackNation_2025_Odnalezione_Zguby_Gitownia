@@ -1,7 +1,8 @@
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
-const fs = require('fs');
+const fs = require('fs').promises;
+const fsSync = require('fs');
 const path = require('path');
 const xml2js = require('xml2js');
 const QRCode = require('qrcode');
@@ -18,8 +19,12 @@ const API_KEY = process.env.PORTAL_API_KEY;
 const DATASET_ID = process.env.DATASET_ID; 
 const MY_PUBLIC_HOST = process.env.PUBLIC_HOST || `http://localhost:${port}`;
 
+// --- ZMIANA: NAZWA URZĘDU NA SZTYWNO ---
+const OFFICE_NAME = "STAROTSTWO_POWIATOWE_1"; 
+const MASTER_CSV_FILENAME = `${OFFICE_NAME}.csv`;
+
 const PUBLIC_DIR = path.join(__dirname, 'public_files');
-if (!fs.existsSync(PUBLIC_DIR)) fs.mkdirSync(PUBLIC_DIR);
+if (!fsSync.existsSync(PUBLIC_DIR)) fsSync.mkdirSync(PUBLIC_DIR);
 
 app.use(cors());
 app.use(express.json({ limit: '10mb' }));
@@ -27,34 +32,42 @@ app.use('/files', express.static(PUBLIC_DIR));
 
 // --- GENERATORY ---
 
-// 1. ZAKTUALIZOWANA funkcja generateCSV (dodane Lat, Lon)
-function generateCSV(formData, id) { 
-    const header = "ID,Kategoria,Podkategoria,Nazwa,Opis,Kolor,Marka,Stan,DataZnalezienia,Miejsce,Lat,Lon\n";
-    const escape = (t) => `"${(t || '').toString().replace(/"/g, '""')}"`;
-    
+const escapeCSV = (t) => {
+    if (t === null || t === undefined) return '';
+    let val = t.toString();
+    // Zabezpieczenie przed CSV Injection
+    if (['=', '+', '-', '@'].includes(val.charAt(0))) val = "'" + val; 
+    // Standard RFC 4180 (cudzysłowy jeśli są spacje, przecinki, entery)
+    if (val.search(/("|,|\n)/g) >= 0) val = `"${val.replace(/"/g, '""')}"`;
+    return val;
+};
+
+// Zwraca sam wiersz danych (bez nagłówka)
+function getCSVRow(formData, id) { 
     const lat = formData.lat || '';
     const lon = formData.lng || '';
 
-    const row = [
-        id, // <--- TUTAJ UŻYWAMY PRZEKAZANEGO ID, A NIE uuidv4()
-        escape(formData.kategoria), 
-        escape(formData.podkategoria),
-        escape(formData.nazwa), 
-        escape(formData.opis), 
-        escape(formData.cechy?.kolor),
-        escape(formData.cechy?.marka), 
-        escape(formData.cechy?.stan),
-        escape(formData.data), 
-        escape(formData.miejsce),
-        escape(lat),
-        escape(lon)
-    ].join(",");
-    
-    return header + row;
+    return [
+        id,
+        escapeCSV(formData.kategoria), 
+        escapeCSV(formData.podkategoria),
+        escapeCSV(formData.nazwa), 
+        escapeCSV(formData.opis), 
+        escapeCSV(formData.cechy?.kolor),
+        escapeCSV(formData.cechy?.marka), 
+        escapeCSV(formData.cechy?.stan),
+        escapeCSV(formData.data), 
+        escapeCSV(formData.miejsce),
+        escapeCSV(lat),
+        escapeCSV(lon)
+    ].join(",") + "\n";
 }
 
-// Dodajemy argument 'id'
-function generateXML(csvFileName, formData, id) {
+function getCSVHeader() {
+    return "ID,Kategoria,Podkategoria,Nazwa,Opis,Kolor,Marka,Stan,DataZnalezienia,Miejsce,Lat,Lon\n";
+}
+
+function generateXML(formData, id) {
     const builder = new xml2js.Builder({ headless: true });
     
     const lat = formData.lat ? formData.lat.toString() : null;
@@ -62,16 +75,13 @@ function generateXML(csvFileName, formData, id) {
 
     const xmlObj = {
         'ZgloszenieZguby': {
-            '$': { 
-                'xmlns': 'http://dane.gov.pl/standardy/zguby/v1',
-                'xmlns:xsi': 'http://www.w3.org/2001/XMLSchema-instance'
-            },
+            '$': { 'xmlns': 'http://dane.gov.pl/standardy/zguby/v1', 'xmlns:xsi': 'http://www.w3.org/2001/XMLSchema-instance' },
             'Naglowek': { 
-                'IdentyfikatorUnikalny': id, // <--- TUTAJ TEŻ TO SAMO ID
+                'IdentyfikatorUnikalny': id,
                 'DataUtworzeniaRekordu': new Date().toISOString(),
-                'JednostkaSamorzadu': {
-                    'Nazwa': 'Urzad Miejski Demo',
-                    'KodTERYT': '0000000'
+                'JednostkaSamorzadu': { 
+                    'Nazwa': OFFICE_NAME.replace(/_/g, ' '), // W XML ładnie ze spacjami: "Starostwo Powiatowe Gryfino"
+                    'KodTERYT': '0000000' 
                 }
             },
             'Przedmiot': {
@@ -88,7 +98,6 @@ function generateXML(csvFileName, formData, id) {
             'KontekstZnalezienia': {
                 'DataZnalezienia': formData.data,
                 'MiejsceOpis': formData.miejsce || '',
-                // Dodajemy sekcję LokalizacjaGeo tylko jeśli mamy współrzędne
                 ...(lat && lon && {
                     'LokalizacjaGeo': {
                         'Lat': lat,
@@ -98,98 +107,72 @@ function generateXML(csvFileName, formData, id) {
             },
             'ZrodloDanych': {
                 'Format': 'CSV',
-                'UrlDoDanych': `${MY_PUBLIC_HOST}/files/${csvFileName}` 
+                // Link prowadzi do pliku Starostwa
+                'UrlDoDanych': `${MY_PUBLIC_HOST}/files/${MASTER_CSV_FILENAME}` 
             }
         }
     };
-    
-    // Dodajemy standardowy nagłówek XML
     return '<?xml version="1.0" encoding="UTF-8"?>\n' + builder.buildObject(xmlObj);
 }
 
-// --- WYSYŁKA DO PORTALU (Bez zmian) ---
-async function pushToPortal(filePath, fileName, title) {
-    if (!API_KEY) {
-        console.warn('[API] Brak klucza API w .env - pomijam wysyłkę.');
-        return null;
-    }
-
-    console.log(`[API] Wysyłka do: ${PORTAL_API_URL}`);
-    
-    const form = new FormData();
-    form.append('package_id', DATASET_ID);
-    form.append('name', fileName);
-    form.append('description', `Import: ${title}`);
-    form.append('format', 'XML');
-    form.append('upload', fs.createReadStream(filePath));
-
-    try {
-        const response = await axios.post(PORTAL_API_URL, form, {
-            headers: {
-                ...form.getHeaders(),
-                'Authorization': API_KEY
-            }
-        });
-        
-        if (response.data.success) {
-            console.log('[API] Sukces!');
-            return response.data.result.url; 
-        }
-    } catch (error) {
-        console.error('[API BŁĄD]', error.response?.data || error.message);
-        return null; 
-    }
-}
-
-// --- ENDPOINT (Bez większych zmian, tylko logika wywołania) ---
+// --- ENDPOINT ---
 app.post('/api/publish-data', async (req, res) => {
     try {
         const formData = req.body;
-        if (!formData) throw new Error("Brak danych formularza");
+        if (!formData) throw new Error("Brak danych");
 
-        // TO JEST GŁÓWNE ID DLA CAŁEGO PROCESU
-        const uniqueId = uuidv4(); 
-
-        const csvName = `dane_${uniqueId}.csv`; // ID w nazwie pliku
+        const uniqueId = uuidv4();
         const xmlName = `meta_${uniqueId}.xml`;
         const qrName = `qr_${uniqueId}.png`;
 
-        const csvPath = path.join(PUBLIC_DIR, csvName);
+        // Używamy nazwy ze zmiennej OFFICE_NAME
+        const csvPath = path.join(PUBLIC_DIR, MASTER_CSV_FILENAME); 
         const xmlPath = path.join(PUBLIC_DIR, xmlName);
         const qrPath = path.join(PUBLIC_DIR, qrName);
 
-        // PRZEKAZUJEMY uniqueId DO FUNKCJI:
-        const csvContent = generateCSV(formData, uniqueId); 
-        const xmlContent = generateXML(csvName, formData, uniqueId);
+        // --- LOGIKA REJESTRU (Dopisywanie) ---
+        let fileExists = false;
+        try {
+            await fs.access(csvPath);
+            fileExists = true;
+        } catch {
+            fileExists = false;
+        }
 
-        // Zapis na dysk
-        fs.writeFileSync(csvPath, csvContent);
-        fs.writeFileSync(xmlPath, xmlContent);
+        const rowContent = getCSVRow(formData, uniqueId);
 
-        // 2. Wysyłka
-        const portalUrl = await pushToPortal(xmlPath, xmlName, formData.nazwa);
+        if (fileExists) {
+            await fs.appendFile(csvPath, rowContent, 'utf8');
+        } else {
+            const header = getCSVHeader();
+            await fs.writeFile(csvPath, header + rowContent, 'utf8');
+        }
 
-        // 3. QR (Linkuje do portalu jeśli się udało, inaczej lokalnie do XML)
-        const finalUrl = portalUrl || `${MY_PUBLIC_HOST}/files/${xmlName}`;
+        // --- XML ---
+        const xmlContent = generateXML(formData, uniqueId);
+        await fs.writeFile(xmlPath, xmlContent, 'utf8');
+
+        // --- QR ---
+        const finalUrl = `${MY_PUBLIC_HOST}/files/${xmlName}`;
         await QRCode.toFile(qrPath, finalUrl);
 
         res.status(200).json({
             success: true,
             files: {
-                xml: `${MY_PUBLIC_HOST}/files/${xmlName}`,
-                csv: `${MY_PUBLIC_HOST}/files/${csvName}`,
+                xml: finalUrl,
+                csv: `${MY_PUBLIC_HOST}/files/${MASTER_CSV_FILENAME}`,
                 qr: `${MY_PUBLIC_HOST}/files/${qrName}`,
-                portalUrl: portalUrl
+                portalUrl: null 
             }
         });
 
     } catch (error) {
-        console.error("Błąd serwera:", error);
+        console.error("Błąd:", error);
         res.status(500).json({ success: false, error: error.message });
     }
 });
 
 app.listen(port, () => {
-    console.log(`Bramka działa na porcie ${port}`);
-    console.log(`Tryb: ${process.env.NODE_ENV || 'development'}`);
+    console.log(`Server działa.`);
+    console.log(`Rejestr zapisywany do: ${MASTER_CSV_FILENAME}`);
 });
