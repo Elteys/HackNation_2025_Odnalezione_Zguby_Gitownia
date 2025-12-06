@@ -1,18 +1,18 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <ZgloszenieZguby xmlns="http://dane.gov.pl/standardy/rzeczy-znalezione">
   <Naglowek>
-    <IdentyfikatorZgloszenia>6078b5ec-be70-4d2a-99a4-5ec2f4dedcc4</IdentyfikatorZgloszenia>
-    <DataUtworzenia>2025-12-06T20:15:21.743Z</DataUtworzenia>
+    <IdentyfikatorZgloszenia>587d3701-700e-4fd1-9482-52fd14c59694</IdentyfikatorZgloszenia>
+    <DataUtworzenia>2025-12-06T20:28:58.236Z</DataUtworzenia>
     <JednostkaSamorzadowa>Urzad Miasta (Demo)</JednostkaSamorzadowa>
   </Naglowek>
   <ZasobDanych>
     <Opis>Wykaz rzeczy znalezionych - pojedynczy rekord</Opis>
     <Format>CSV</Format>
-    <UrlDoDanych>http://localhost:3001/files/dane_eb5b1e4a-8604-4662-b833-54dd647e862a.csv</UrlDoDanych>
+    <UrlDoDanych>http://localhost:3001/files/dane_954d2d30-5463-4725-b146-7eace55c2db1.csv</UrlDoDanych>
   </ZasobDanych>
   <Podsumowanie>
-    <Kategoria>DOKUMENTY</Kategoria>
-    <Nazwa>asdasd</Nazwa>
+    <Kategoria/>
+    <Nazwa/>
     <Status>DO_ODBIORU</Status>
   </Podsumowanie>
 </ZgloszenieZguby>

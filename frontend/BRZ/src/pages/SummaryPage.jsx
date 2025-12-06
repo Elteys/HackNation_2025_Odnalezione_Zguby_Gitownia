@@ -1,13 +1,21 @@
-import React, { useState } from 'react';
+// src/pages/SummaryPage.jsx
+import React, { useState, useEffect } from 'react';
 import { useFormContext } from '../context/FormContext';
 import { useNavigate } from 'react-router-dom';
-import { Upload, Edit3, CheckCircle, FileText, Download } from 'lucide-react';
+import { Upload, Edit3, CheckCircle, FileText } from 'lucide-react';
 
 const SummaryPage = () => {
 	const { formData } = useFormContext();
 	const navigate = useNavigate();
 	const [isPublishing, setIsPublishing] = useState(false);
 	const [publishResult, setPublishResult] = useState(null);
+
+	// ZABEZPIECZENIE: Jeśli wejdziesz tu bez danych, wróć do formularza
+	useEffect(() => {
+		if (!formData.nazwa || !formData.kategoria) {
+			navigate('/');
+		}
+	}, [formData, navigate]);
 
 	const handlePublish = async () => {
 		setIsPublishing(true);
@@ -99,8 +107,7 @@ const SummaryPage = () => {
 					</div>
 
 					<button
-						// LINIA 84: ZMIANA NA PRZEKIEROWANIE DO STRONY GŁÓWNEJ (/)
-						onClick={() => navigate('/')}
+						onClick={() => window.location.reload()}
 						className="px-6 py-3 bg-slate-900 text-white rounded-lg font-bold hover:bg-slate-800 transition-colors"
 					>
 						Rozpocznij nowe zgłoszenie
@@ -168,7 +175,7 @@ const SummaryPage = () => {
 
 				<div className="bg-slate-50 px-8 py-5 border-t border-slate-100 flex flex-col sm:flex-row justify-between gap-4">
 					<button
-						onClick={() => navigate('/formularz')}
+						onClick={() => navigate('/')}
 						className="w-full sm:w-auto px-4 py-2 border border-slate-300 rounded-lg text-slate-700 font-medium hover:bg-white transition-colors flex justify-center items-center gap-2"
 						disabled={isPublishing}
 					>
