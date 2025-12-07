@@ -9,7 +9,7 @@ const { v4: uuidv4 } = require('uuid');
 const { parse } = require('csv-parse/sync');
 const { stringify } = require('csv-stringify/sync');
 const xml2js = require('xml2js');
-const https = require('https'); // Upewnij się, że masz to na górze pliku!
+const https = require('https');
 
 const app = express();
 const port = process.env.PORT || 3001;
@@ -19,8 +19,6 @@ app.use(express.json({ limit: '10mb' }));
 
 // --- KONFIGURACJA ---
 const MY_PUBLIC_HOST = process.env.PUBLIC_HOST || `https://localhost:${port}`;
-
-// Zmieniamy na link, który podałeś w pytaniu (z hashem #)
 const FRONTEND_URL = 'https://localhost:5173/#/szczegoly'; 
 
 const OFFICE_NAME = "Starostwo_Powiatowe_Gryfino";
@@ -29,16 +27,12 @@ const MASTER_CSV_FILENAME = `${OFFICE_NAME}.csv`;
 const BASE_OUTPUT_DIR = path.join(__dirname, 'public_files');
 const CSV_DIR = path.join(BASE_OUTPUT_DIR, 'csv');
 const QR_DIR = path.join(BASE_OUTPUT_DIR, 'qr');
-const TEMPLATE_XML_PATH = path.join(__dirname, 'template.xml');
+const zguby_XML_PATH = path.join(__dirname, 'zguby.xml');
 
-// Upewnij się, że katalogi istnieją
 if (!fsSync.existsSync(CSV_DIR)) fsSync.mkdirSync(CSV_DIR, { recursive: true });
 if (!fsSync.existsSync(QR_DIR)) fsSync.mkdirSync(QR_DIR, { recursive: true });
 
-app.use(cors({ origin: '*' }));
-app.use(express.json({ limit: '10mb' }));
-
-// Udostępniamy pliki statycznie
+// Udostępnianie plików statycznie
 app.use('/files', express.static(BASE_OUTPUT_DIR));
 
 const CSV_FILE_PATH = path.join(CSV_DIR, MASTER_CSV_FILENAME);
@@ -62,27 +56,35 @@ async function writeRecords(records) {
         "Resources", "Tags", "Supplements"
     ];
 
-    const output = stringify(records, {
+    let output = stringify(records, {
         header: true,
         columns: columns,
-        quoted: true // Bezpieczeństwo: zawsze w cudzysłowach
+        quoted: true
     });
 
-    await fs.writeFile(CSV_FILE_PATH, '\uFEFF' + output, 'utf8');
+    // Jeśli plik istnieje, nie nadpisuj nagłówków przy dopisywaniu
+    if (fsSync.existsSync(CSV_FILE_PATH) && (await fs.readFile(CSV_FILE_PATH, 'utf8')).trim().length > 0) {
+        // usuń nagłówek z output przed dopisaniem
+        output = output.split('\n').slice(1).join('\n');
+        await fs.appendFile(CSV_FILE_PATH, '\n' + output, 'utf8');
+    } else {
+        // jeśli plik nie istnieje, zapisz cały output z nagłówkiem
+        await fs.writeFile(CSV_FILE_PATH, '\uFEFF' + output, 'utf8');
+    }
 }
 
+
 // --- XML PARSER ---
-async function parseTemplateXML() {
-    const xmlContent = await fs.readFile(TEMPLATE_XML_PATH, 'utf8');
+async function parsezgubyXML() {
+    const xmlContent = await fs.readFile(zguby_XML_PATH, 'utf8');
     const parser = new xml2js.Parser({ explicitArray: false });
     const result = await parser.parseStringPromise(xmlContent);
-
     const datasets = result.datasets.dataset;
-    // Jeśli tylko jeden dataset, zamień na tablicę
     return Array.isArray(datasets) ? datasets : [datasets];
 }
 
 // --- ENDPOINTY ---
+
 // 1. Dodaj nowy rekord i generuj QR
 app.post('/api/publish-data', async (req, res) => {
     try {
@@ -90,15 +92,13 @@ app.post('/api/publish-data', async (req, res) => {
         if (!formData) throw new Error("Brak danych z formularza");
 
         const records = await readRecords();
-        const templateDatasets = await parseTemplateXML();
-
-        // Używamy tylko pierwszego dataset z XML jako szablon
-        const xmlData = templateDatasets[0] || {};
+        const zgubyDatasets = await parsezgubyXML();
+        const xmlData = zgubyDatasets[0] || {};
 
         const newRecord = {
             ID: uuidv4(),
             Kategoria: xmlData.categories?.category ? (Array.isArray(xmlData.categories.category) ? xmlData.categories.category.join('|') : xmlData.categories.category) : '',
-            Podkategoria: '', // Możesz uzupełnić z formularza jeśli chcesz
+            Podkategoria: '',
             Nazwa: formData.nazwa || '',
             Opis: formData.opis || '',
             Kolor: formData.cechy?.kolor || '',
@@ -150,12 +150,8 @@ app.get('/api/item/:id', async (req, res) => {
         const records = await readRecords();
         const item = records.find(r => r.ID === id);
 
-      if (!item) {
-            return res.status(404).json({ error: "Nie znaleziono przedmiotu" });
-        }
+        if (!item) return res.status(404).json({ error: "Nie znaleziono przedmiotu" });
 
-        // Mapowanie CSV (wielkie litery) na JSON Frontendu (małe litery, struktura cech)
-        // Frontend oczekuje konkretnej struktury w DetailsPage.jsx
         const responseData = {
             id: item.ID,
             nazwa: item.Nazwa,
@@ -170,7 +166,6 @@ app.get('/api/item/:id', async (req, res) => {
                 marka: item.Marka,
                 stan: item.Stan
             },
-            // Zwracamy boolean (true/false) zamiast stringa 'true'/'false'
             CzyOdebrany: item.CzyOdebrany === 'true'
         };
 
@@ -201,9 +196,50 @@ app.post('/api/item/:id/return', async (req, res) => {
     }
 });
 
-// Wczytujemy certyfikaty wygenerowane przez mkcert
+// 4. Dynamiczne pobieranie CSV dla danego starostwa/gminy
+app.get('/api/csv/:office', async (req, res) => {
+    try {
+        const { office } = req.params;
+        const filename = `${office}.csv`;
+        const filePath = path.join(CSV_DIR, filename);
+
+        if (!fsSync.existsSync(filePath)) {
+            return res.status(404).json({ success: false, error: "Nie znaleziono pliku CSV dla podanego biura" });
+        }
+
+        res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+        res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+
+        const fileContent = await fs.readFile(filePath, 'utf8');
+        res.send(fileContent);
+
+    } catch (error) {
+        console.error("Błąd pobierania CSV:", error);
+        res.status(500).json({ success: false, error: "Błąd serwera przy pobieraniu CSV" });
+    }
+});
+// 5. Pobranie zguby.xml
+app.get('/api/zguby', async (req, res) => {
+    try {
+        if (!fsSync.existsSync(zguby_XML_PATH)) {
+            return res.status(404).json({ success: false, error: "Nie znaleziono pliku zguby.xml" });
+        }
+
+        res.setHeader('Content-Disposition', `attachment; filename="zguby.xml"`);
+        res.setHeader('Content-Type', 'application/xml; charset=utf-8');
+
+        const xmlContent = await fs.readFile(zguby_XML_PATH, 'utf8');
+        res.send(xmlContent);
+
+    } catch (error) {
+        console.error("Błąd pobierania zguby.xml:", error);
+        res.status(500).json({ success: false, error: "Błąd serwera przy pobieraniu zguby.xml" });
+    }
+});
+
+
+// --- HTTPS (lub HTTP fallback) ---
 try {
-    // Szukamy plików w tym samym folderze co server.js
     const httpsOptions = {
         key: fsSync.readFileSync(path.join(__dirname, 'localhost-key.pem')),
         cert: fsSync.readFileSync(path.join(__dirname, 'localhost.pem'))
@@ -215,6 +251,5 @@ try {
     });
 } catch (error) {
     console.error("BŁĄD HTTPS: Nie znaleziono plików .pem! Uruchamiam zwykłe HTTP.");
-    console.error("Upewnij się, że pliki localhost.pem i localhost-key.pem są w folderze:", __dirname);
     app.listen(port, () => console.log(`Http server: http://localhost:${port}`));
 }

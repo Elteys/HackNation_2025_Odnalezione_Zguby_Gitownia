@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Created with Liquid Technologies Online Tools 1.0 (https://www.liquid-technologies.com) -->
+<datasets xmlns="urn:otwarte-dane:harvester:1.13" xsi:schemaLocation="urn:otwarte-dane:harvester:1.13 schema.xsd" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+
+  <!-- Przykładowy dataset z innych danych (możesz usunąć jeśli nie potrzebny) -->
+  <dataset xmlns="">
+    <extIdent>sample_dataset</extIdent>
+    <intIdent>4858</intIdent>
+    <title>
+      <polish>Przykładowy dataset</polish>
+      <english>Sample Dataset</english>
+    </title>
+    <description>
+      <polish>Przykładowy opis datasetu.</polish>
+      <english>Sample dataset description.</english>
+    </description>
+    <url>https://www.example.com</url>
+    <updateFrequency>yearly</updateFrequency>
+    <categories>
+      <category>ENVI</category>
+      <category>SOCI</category>
+      <category>GOVE</category>
+    </categories>
+    <conditions>
+      <modification>false</modification>
+      <personalData>false</personalData>
+    </conditions>
+    <resources>
+      <resource>
+        <extIdent>sample_resource</extIdent>
+        <url>https://www.example.com/resource.csv</url>
+        <title>
+          <polish>Przykładowy plik CSV</polish>
+        </title>
+        <description>
+          <polish>Plik CSV z przykładowymi danymi.</polish>
+        </description>
+      </resource>
+    </resources>
+    <tags>
+      <tag lang="pl">przykład</tag>
+      <tag lang="en">sample</tag>
+    </tags>
+    <lastUpdateDate>2004-06-05T14:42:20.99</lastUpdateDate>
+    <hasDynamicData>false</hasDynamicData>
+    <hasHighValueData>false</hasHighValueData>
+    <hasHighValueDataFromEuropeanCommissionList>false</hasHighValueDataFromEuropeanCommissionList>
+    <hasResearchData>false</hasResearchData>
+    <supplements>
+      <supplement>
+        <url>https://www.example.com/supplement1.csv</url>
+        <name>
+          <polish>Przykładowy suplement 1</polish>
+        </name>
+        <language>pl</language>
+      </supplement>
+    </supplements>
+  </dataset>
+
+  <!-- Dataset Starostwa Powiatowego w Gryfinie -->
+  <dataset status="published" xmlns="">
+    <extIdent>starostwo_gryfino</extIdent>
+    <intIdent>1</intIdent>
+    <title>
+      <polish>Starostwo Powiatowe w Gryfinie - Zgubione rzeczy</polish>
+      <english>Powiat Office in Gryfino - Lost Items</english>
+    </title>
+    <description>
+      <polish>Lista zgubionych rzeczy przechowywanych w Starostwie Powiatowym w Gryfinie.</polish>
+      <english>List of lost items held at the County Office in Gryfino.</english>
+    </description>
+    <url>https://localhost:3001/api/csv/Starostwo_Powiatowe_Gryfino</url>
+    <updateFrequency>irregular</updateFrequency>
+    <categories>
+      <category>REGI</category>
+      <category>EDUC</category>
+      <category>AGRI</category>
+    </categories>
+    <conditions>
+      <source>true</source>
+      <modification>false</modification>
+      <responsibilities>Starostwo Powiatowe w Gryfinie odpowiada za przechowywanie zgubionych rzeczy</responsibilities>
+    </conditions>
+    <resources>
+      <resource>
+        <extIdent>resource_csv</extIdent>
+        <url>https://localhost:3001/api/csv/Starostwo_Powiatowe_Gryfino</url>
+        <title>
+          <polish>Plik CSV - Zgubione rzeczy</polish>
+          <english>CSV file - Lost Items</english>
+        </title>
+        <description>
+          <polish>CSV zawierający wszystkie zgubione rzeczy przechowywane w Starostwie Powiatowym w Gryfinie.</polish>
+          <english>CSV containing all lost items held at the County Office in Gryfino.</english>
+        </description>
+      </resource>
+    </resources>
+    <tags>
+      <tag lang="pl">Starostwo</tag>
+      <tag lang="pl">Gryfino</tag>
+      <tag lang="en">Lost Items</tag>
+    </tags>
+    <lastUpdateDate>2025-12-07T12:00:00</lastUpdateDate>
+    <hasDynamicData>true</hasDynamicData>
+    <hasHighValueData>false</hasHighValueData>
+    <hasHighValueDataFromEuropeanCommissionList>false</hasHighValueDataFromEuropeanCommissionList>
+    <hasResearchData>false</hasResearchData>
+    <supplements>
+      <supplement>
+        <url>https://localhost:3001/api/csv/Starostwo_Powiatowe_Gryfino</url>
+        <name>
+          <polish>Plik CSV z danymi</polish>
+          <english>CSV file with data</english>
+        </name>
+        <language>pl</language>
+      </supplement>
+    </supplements>
+  </dataset>
+
+</datasets>
