@@ -6,24 +6,25 @@ const fsSync = require('fs');
 const path = require('path');
 const QRCode = require('qrcode');
 const { v4: uuidv4 } = require('uuid');
-const { parse } = require('csv-parse/sync'); // Nowa biblioteka do czytania
-const { stringify } = require('csv-stringify/sync'); // Nowa biblioteka do zapisu
-const https = require('https'); // Upewnij się, że masz to na górze pliku!
+const { parse } = require('csv-parse/sync');
+const { stringify } = require('csv-stringify/sync');
+const https = require('https');
+const xml2js = require('xml2js'); // Pamiętaj o: npm install xml2js
 
 const app = express();
 const port = process.env.PORT || 3001;
 
 // --- KONFIGURACJA ---
 const MY_PUBLIC_HOST = process.env.PUBLIC_HOST || `https://localhost:${port}`;
-// Zmieniamy na link, który podałeś w pytaniu (z hashem #)
 const FRONTEND_URL = 'https://localhost:5173/#/szczegoly'; 
 
-const OFFICE_NAME = "Starostwo_Powiatowe_Gryfino"; 
-const MASTER_CSV_FILENAME = `${OFFICE_NAME}.csv`;
+// ID Starosty ustawione na sztywno (zgodnie z prośbą)
+const OFFICE_ID = "2"; 
 
 const BASE_OUTPUT_DIR = path.join(__dirname, 'public_files');
 const CSV_DIR = path.join(BASE_OUTPUT_DIR, 'csv');
 const QR_DIR = path.join(BASE_OUTPUT_DIR, 'qr');
+const XML_PATH = path.join(__dirname, 'zguby.xml'); // Ścieżka do pliku XML
 
 // Upewnij się, że katalogi istnieją
 if (!fsSync.existsSync(CSV_DIR)) fsSync.mkdirSync(CSV_DIR, { recursive: true });
@@ -31,32 +32,78 @@ if (!fsSync.existsSync(QR_DIR)) fsSync.mkdirSync(QR_DIR, { recursive: true });
 
 app.use(cors({ origin: '*' }));
 app.use(express.json({ limit: '10mb' }));
-// Udostępniamy pliki statycznie
 app.use('/files', express.static(BASE_OUTPUT_DIR));
 
-// Ścieżka do głównego pliku
-const CSV_FILE_PATH = path.join(CSV_DIR, MASTER_CSV_FILENAME);
-
-// --- HELPERY DO CSV ---
-
-// Czytanie wszystkich rekordów jako tablica obiektów
-async function readRecords() {
+// --- NOWA FUNKCJA: POBIERZ ŚCIEŻKĘ DO PLIKU CSV Z XML ---
+async function getCsvFilePath() {
     try {
-        await fs.access(CSV_FILE_PATH); // Sprawdź czy plik istnieje
-        const content = await fs.readFile(CSV_FILE_PATH, 'utf8');
-        return parse(content, {
-            columns: true, // Pierwszy wiersz to nagłówki
-            skip_empty_lines: true,
-            trim: true
-        });
-    } catch (e) {
-        return []; // Jeśli plik nie istnieje, zwróć pustą tablicę
+        // 1. Wczytaj XML
+        const xmlContent = await fs.readFile(XML_PATH, 'utf8');
+        
+        // 2. Parsuj XML do JSON
+        const parser = new xml2js.Parser({ explicitArray: false, ignoreAttrs: true });
+        const result = await parser.parseStringPromise(xmlContent);
+
+        // 3. Znajdź listę datasetów
+        // Uwaga: jeśli jest tylko 1 dataset, xml2js zwraca obiekt, jeśli więcej - tablicę.
+        let datasets = result.datasets.dataset;
+        if (!Array.isArray(datasets)) {
+            datasets = [datasets];
+        }
+
+        // 4. Znajdź dataset dla naszego OFFICE_ID (intIdent == 1)
+        const targetDataset = datasets.find(d => d.intIdent === OFFICE_ID);
+
+        if (!targetDataset) {
+            throw new Error(`Nie znaleziono w XML datasetu o ID: ${OFFICE_ID}`);
+        }
+
+        // 5. Wyciągnij nazwę pliku z URL
+        // URL w XML: https://localhost:3001/api/csv/Starostwo_Powiatowe_Gryfino
+        // Bierzemy to co po ostatnim slashu
+        const urlParts = targetDataset.url.split('/');
+        const fileNameBase = urlParts[urlParts.length - 1]; // "Starostwo_Powiatowe_Gryfino"
+        
+        const fileName = `${fileNameBase}.csv`;
+        
+        console.log(`[INFO] Wybrano plik CSV na podstawie XML (ID ${OFFICE_ID}): ${fileName}`);
+        
+        return path.join(CSV_DIR, fileName);
+
+    } catch (error) {
+        console.error("Błąd podczas czytania konfiguracji z XML:", error);
+        // Fallback w razie błędu XML - żeby serwer nie padł
+        return path.join(CSV_DIR, 'backup_data.csv');
     }
 }
 
-// Zapisywanie rekordów z powrotem do pliku
+// --- ZMODYFIKOWANE HELPERY DO CSV ---
+
+// Czytanie rekordów (teraz pobiera ścieżkę dynamicznie)
+async function readRecords() {
+    try {
+        const filePath = await getCsvFilePath(); // Dynamiczna ścieżka
+        await fs.access(filePath);
+        const content = await fs.readFile(filePath, 'utf8');
+        
+        // Usuwamy BOM (\uFEFF) jeśli istnieje, żeby nie psuł nagłówków
+        const cleanContent = content.charCodeAt(0) === 0xFEFF ? content.slice(1) : content;
+
+        return parse(cleanContent, {
+            columns: true,
+            skip_empty_lines: true,
+            trim: true,
+            relax_quotes: true
+        });
+    } catch (e) {
+        return [];
+    }
+}
+
+// Zapisywanie rekordów (teraz pobiera ścieżkę dynamicznie)
 async function writeRecords(records) {
-    // Definiujemy kolejność kolumn (żeby była zgodna ze standardem)
+    const filePath = await getCsvFilePath(); // Dynamiczna ścieżka
+
     const columns = [
         "ID", "Kategoria", "Podkategoria", "Nazwa", "Opis", 
         "Kolor", "Marka", "Stan", "DataZnalezienia", 
@@ -66,10 +113,11 @@ async function writeRecords(records) {
     const output = stringify(records, {
         header: true,
         columns: columns,
-        quoted: true // Bezpieczeństwo: zawsze w cudzysłowach
+        quoted: true
     });
 
-    await fs.writeFile(CSV_FILE_PATH, output, 'utf8');
+    // Zapisz z BOM dla poprawnego kodowania polskich znaków w Excelu
+    await fs.writeFile(filePath, '\uFEFF' + output, 'utf8');
 }
 
 
@@ -85,24 +133,24 @@ app.post('/api/publish-data', async (req, res) => {
         const qrName = `qr_${uniqueId}.png`;
         const qrPath = path.join(QR_DIR, qrName);
 
-        // 1. Wczytaj istniejące
+        // 1. Wczytaj istniejące (z dynamicznego pliku)
         const records = await readRecords();
 
         // 2. Dodaj nowy rekord
         const newRecord = {
             ID: uniqueId,
-            Kategoria: formData.kategoria,
-            Podkategoria: formData.podkategoria,
-            Nazwa: formData.nazwa,
-            Opis: formData.opis,
-            Kolor: formData.cechy?.kolor,
-            Marka: formData.cechy?.marka,
-            Stan: formData.cechy?.stan,
-            DataZnalezienia: formData.data,
-            Miejsce: formData.miejsce,
+            Kategoria: formData.kategoria || '',
+            Podkategoria: formData.podkategoria || '',
+            Nazwa: formData.nazwa || '',
+            Opis: formData.opis || '',
+            Kolor: formData.cechy?.kolor || '',
+            Marka: formData.cechy?.marka || '',
+            Stan: formData.cechy?.stan || '',
+            DataZnalezienia: formData.data || '',
+            Miejsce: formData.miejsce || '',
             Lat: formData.lat || '',
             Lon: formData.lng || '',
-            CzyOdebrany: 'false' // Domyślnie false
+            CzyOdebrany: 'false'
         };
 
         records.push(newRecord);
@@ -110,14 +158,18 @@ app.post('/api/publish-data', async (req, res) => {
         // 3. Zapisz całość
         await writeRecords(records);
 
-        // 4. Generuj QR (Linkuje do frontendu)
+        // 4. Generuj QR
         const linkToItem = `${FRONTEND_URL}/${uniqueId}`;
         await QRCode.toFile(qrPath, linkToItem);
+
+        // Musimy wiedzieć jaką nazwę pliku odesłać w odpowiedzi
+        const filePath = await getCsvFilePath();
+        const fileName = path.basename(filePath);
 
         res.status(200).json({
             success: true,
             files: {
-                csv: `${MY_PUBLIC_HOST}/files/csv/${MASTER_CSV_FILENAME}`,
+                csv: `${MY_PUBLIC_HOST}/files/csv/${fileName}`,
                 qr: `${MY_PUBLIC_HOST}/files/qr/${qrName}`,
                 itemLink: linkToItem
             }
@@ -129,7 +181,7 @@ app.post('/api/publish-data', async (req, res) => {
     }
 });
 
-// 2. POBIERZ POJEDYNCZY REKORD (Dla DetailsPage.jsx)
+// 2. POBIERZ POJEDYNCZY REKORD
 app.get('/api/item/:id', async (req, res) => {
     try {
         const { id } = req.params;
@@ -141,8 +193,6 @@ app.get('/api/item/:id', async (req, res) => {
             return res.status(404).json({ error: "Nie znaleziono przedmiotu" });
         }
 
-        // Mapowanie CSV (wielkie litery) na JSON Frontendu (małe litery, struktura cech)
-        // Frontend oczekuje konkretnej struktury w DetailsPage.jsx
         const responseData = {
             id: item.ID,
             nazwa: item.Nazwa,
@@ -157,7 +207,6 @@ app.get('/api/item/:id', async (req, res) => {
                 marka: item.Marka,
                 stan: item.Stan
             },
-            // Zwracamy boolean (true/false) zamiast stringa 'true'/'false'
             CzyOdebrany: item.CzyOdebrany === 'true'
         };
 
@@ -169,7 +218,7 @@ app.get('/api/item/:id', async (req, res) => {
     }
 });
 
-// 3. ZAKTUALIZUJ STATUS (Dla przycisku "ODBIERZ")
+// 3. ZAKTUALIZUJ STATUS
 app.post('/api/item/:id/return', async (req, res) => {
     try {
         const { id } = req.params;
@@ -181,10 +230,7 @@ app.post('/api/item/:id/return', async (req, res) => {
             return res.status(404).json({ error: "Nie znaleziono przedmiotu do aktualizacji" });
         }
 
-        // Aktualizacja statusu
         records[index].CzyOdebrany = 'true';
-
-        // Nadpisanie pliku CSV
         await writeRecords(records);
 
         res.json({ success: true, message: "Status zaktualizowany na ODEBRANY" });
@@ -195,20 +241,38 @@ app.post('/api/item/:id/return', async (req, res) => {
     }
 });
 
-// Wczytujemy certyfikaty wygenerowane przez mkcert
+// 4. ENDPOINT DO POBIERANIA CSV (uniwersalny)
+// Umożliwia pobranie pliku po nazwie, którą mamy w XML (np. Starostwo_Powiatowe_Gryfino.csv)
+app.get('/api/csv/:filename', async (req, res) => {
+    const { filename } = req.params;
+    // Dodajemy .csv jeśli nie ma
+    const safeFilename = filename.endsWith('.csv') ? filename : `${filename}.csv`;
+    const filePath = path.join(CSV_DIR, safeFilename);
+
+    if (fsSync.existsSync(filePath)) {
+        res.download(filePath);
+    } else {
+        res.status(404).send('Plik nie istnieje');
+    }
+});
+
+// URUCHAMIANIE SERWERA HTTPS
 try {
-    // Szukamy plików w tym samym folderze co server.js
     const httpsOptions = {
         key: fsSync.readFileSync(path.join(__dirname, 'localhost-key.pem')),
         cert: fsSync.readFileSync(path.join(__dirname, 'localhost.pem'))
     };
 
-    https.createServer(httpsOptions, app).listen(port, () => {
+    https.createServer(httpsOptions, app).listen(port, async () => {
         console.log(`Bezpieczny serwer HTTPS działa na porcie ${port}`);
-        console.log(`https://localhost:${port}`);
+        console.log(`Weryfikacja XML...`);
+        // Testowe wywołanie przy starcie, żeby sprawdzić czy XML jest OK
+        await getCsvFilePath();
     });
 } catch (error) {
     console.error("BŁĄD HTTPS: Nie znaleziono plików .pem! Uruchamiam zwykłe HTTP.");
-    console.error("Upewnij się, że pliki localhost.pem i localhost-key.pem są w folderze:", __dirname);
-    app.listen(port, () => console.log(`Http server: http://localhost:${port}`));
+    app.listen(port, async () => {
+        console.log(`Http server: http://localhost:${port}`);
+        await getCsvFilePath();
+    });
 }

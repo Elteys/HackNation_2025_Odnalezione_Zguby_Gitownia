@@ -57,24 +57,23 @@
     </supplements>
   </dataset>
 
-  <!-- Dataset Starostwa Powiatowego w Gryfinie -->
   <dataset status="published" xmlns="">
-    <extIdent>starostwo_gryfino</extIdent>
+    <extIdent>starostwo_1</extIdent>
     <intIdent>1</intIdent>
     <title>
-      <polish>Starostwo Powiatowe w Gryfinie - Zgubione rzeczy</polish>
-      <english>Powiat Office in Gryfino - Lost Items</english>
+      <polish></polish>
+      <english></english>
     </title>
     <description>
-      <polish>Lista zgubionych rzeczy przechowywanych w Starostwie Powiatowym w Gryfinie.</polish>
-      <english>List of lost items held at the County Office in Gryfino.</english>
+      <polish></polish>
+      <english></english>
     </description>
-    <url>https://localhost:3001/api/csv/Starostwo_Powiatowe_Gryfino</url>
+    <url>https://localhost:3001/api/csv/Starostwo_Powiatowe_1</url>
     <updateFrequency>irregular</updateFrequency>
     <categories>
-      <category>REGI</category>
-      <category>EDUC</category>
-      <category>AGRI</category>
+      <category></category>
+      <category></category>
+      <category></category>
     </categories>
     <conditions>
       <source>true</source>
@@ -84,21 +83,21 @@
     <resources>
       <resource>
         <extIdent>resource_csv</extIdent>
-        <url>https://localhost:3001/api/csv/Starostwo_Powiatowe_Gryfino</url>
+        <url>https://localhost:3001/api/csv/Starostwo_Powiatowe_1</url>
         <title>
-          <polish>Plik CSV - Zgubione rzeczy</polish>
-          <english>CSV file - Lost Items</english>
+          <polish></polish>
+          <english></english>
         </title>
         <description>
-          <polish>CSV zawierający wszystkie zgubione rzeczy przechowywane w Starostwie Powiatowym w Gryfinie.</polish>
-          <english>CSV containing all lost items held at the County Office in Gryfino.</english>
+          <polish></polish>
+          <english></english>
         </description>
       </resource>
     </resources>
     <tags>
-      <tag lang="pl">Starostwo</tag>
-      <tag lang="pl">Gryfino</tag>
-      <tag lang="en">Lost Items</tag>
+      <tag lang="pl"></tag>
+      <tag lang="pl"></tag>
+      <tag lang="en"></tag>
     </tags>
     <lastUpdateDate>2025-12-07T12:00:00</lastUpdateDate>
     <hasDynamicData>true</hasDynamicData>
@@ -107,7 +106,66 @@
     <hasResearchData>false</hasResearchData>
     <supplements>
       <supplement>
-        <url>https://localhost:3001/api/csv/Starostwo_Powiatowe_Gryfino</url>
+        <url>https://localhost:3001/api/csv/Starostwo_Powiatowe_1</url>
+        <name>
+          <polish>Plik CSV z danymi</polish>
+          <english>CSV file with data</english>
+        </name>
+        <language>pl</language>
+      </supplement>
+    </supplements>
+  </dataset>
+
+<dataset status="published" xmlns="">
+    <extIdent>starostwo_drugie</extIdent>
+    <intIdent>2</intIdent>
+    <title>
+      <polish></polish>
+      <english></english>
+    </title>
+    <description>
+      <polish></polish>
+      <english></english>
+    </description>
+    <url>https://localhost:3001/api/csv/Starostwo_Powiatowe_Test</url>
+    <updateFrequency>irregular</updateFrequency>
+    <categories>
+      <category></category>
+      <category></category>
+      <category></category>
+    </categories>
+    <conditions>
+      <source>true</source>
+      <modification>false</modification>
+      <responsibilities></responsibilities>
+    </conditions>
+    <resources>
+      <resource>
+        <extIdent>resource_csv</extIdent>
+        <url>https://localhost:3001/api/csv/Starostwo_Powiatowe_Test</url>
+        <title>
+          <polish></polish>
+          <english></english>
+        </title>
+        <description>
+          <polish></polish>
+          <english></english>
+        </description>
+      </resource>
+    </resources>
+    <tags>
+      <tag lang="pl"></tag>
+      <tag lang="pl"></tag>
+      <tag lang="en"></tag>
+    </tags>
+    <lastUpdateDate>2025-12-07T12:00:00</lastUpdateDate>
+    <hasDynamicData>true</hasDynamicData>
+    <hasHighValueData>false</hasHighValueData>
+    <hasHighValueDataFromEuropeanCommissionList>false</hasHighValueDataFromEuropeanCommissionList>
+    <hasResearchData>false</hasResearchData>
+    <supplements>
+      <supplement>
+        <url>https://localhost:3001/api/csv/Starostwo_Powiatowe_Test</url>
         <name>
           <polish>Plik CSV z danymi</polish>
           <english>CSV file with data</english>
