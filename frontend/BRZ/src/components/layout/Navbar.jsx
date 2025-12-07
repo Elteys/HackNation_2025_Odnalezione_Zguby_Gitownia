@@ -25,7 +25,7 @@ const Navbar = () => {
                     </Link>
 
                     {/* PRAWA STRONA (DESKTOP) - Widoczna od md wzwyż */}
-                    <div className="hidden md:flex items-center gap-6">
+                    <div className="hidden md:flex items-stretch gap-6">
                         {/* Narzędzia WCAG */}
                         <WcagTools />
 
