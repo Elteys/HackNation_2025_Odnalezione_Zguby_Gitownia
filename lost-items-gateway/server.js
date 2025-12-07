@@ -241,20 +241,46 @@ app.post('/api/item/:id/return', async (req, res) => {
     }
 });
 
-// 4. ENDPOINT DO POBIERANIA CSV (uniwersalny)
-// Umożliwia pobranie pliku po nazwie, którą mamy w XML (np. Starostwo_Powiatowe_Gryfino.csv)
-app.get('/api/csv/:filename', async (req, res) => {
-    const { filename } = req.params;
-    // Dodajemy .csv jeśli nie ma
-    const safeFilename = filename.endsWith('.csv') ? filename : `${filename}.csv`;
-    const filePath = path.join(CSV_DIR, safeFilename);
+app.get('/api/csv/:office', async (req, res) => {
+    try {
+        const { office } = req.params;
+        const filename = `${office}.csv`;
+        const filePath = path.join(CSV_DIR, filename);
 
-    if (fsSync.existsSync(filePath)) {
-        res.download(filePath);
-    } else {
-        res.status(404).send('Plik nie istnieje');
+        if (!fsSync.existsSync(filePath)) {
+            return res.status(404).json({ success: false, error: "Nie znaleziono pliku CSV dla podanego biura" });
+        }
+
+        res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+        res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+
+        const fileContent = await fs.readFile(filePath, 'utf8');
+        res.send(fileContent);
+
+    } catch (error) {
+        console.error("Błąd pobierania CSV:", error);
+        res.status(500).json({ success: false, error: "Błąd serwera przy pobieraniu CSV" });
     }
 });
+// 5. Pobranie zguby.xml
+app.get('/api/zguby', async (req, res) => {
+    try {
+        if (!fsSync.existsSync(zguby_XML_PATH)) {
+            return res.status(404).json({ success: false, error: "Nie znaleziono pliku zguby.xml" });
+        }
+
+        res.setHeader('Content-Disposition', `attachment; filename="zguby.xml"`);
+        res.setHeader('Content-Type', 'application/xml; charset=utf-8');
+
+        const xmlContent = await fs.readFile(zguby_XML_PATH, 'utf8');
+        res.send(xmlContent);
+
+    } catch (error) {
+        console.error("Błąd pobierania zguby.xml:", error);
+        res.status(500).json({ success: false, error: "Błąd serwera przy pobieraniu zguby.xml" });
+    }
+});
+
 
 // URUCHAMIANIE SERWERA HTTPS
 try {
