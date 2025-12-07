@@ -1,8 +1,7 @@
-// CAŁY KOD SummaryPage.jsx (Zaktualizowany o szerokości)
 import React, { useState, useEffect } from 'react';
 import { useFormContext } from '../context/FormContext';
 import { useNavigate } from 'react-router-dom';
-import { Upload, Edit3, CheckCircle, FileText } from 'lucide-react';
+import { Upload, Edit3, CheckCircle, FileText, Printer } from 'lucide-react';
 
 const SummaryPage = () => {
     const { formData } = useFormContext();
@@ -38,51 +37,78 @@ const SummaryPage = () => {
         }
     };
 
+    // Funkcja wywołująca natywne okno drukowania
+    const handlePrint = () => {
+        window.print();
+    };
+
     if (publishResult) {
         return (
-            // ZMIANA: max-w-6xl dla wyrównania z Navbarem
-            <div className="max-w-6xl mx-auto px-4 py-8 animate-in zoom-in-95 duration-500">
-                {/* Wewnętrzny kontener centrujący treść, żeby nie była za szeroka */}
-                <div className="max-w-3xl mx-auto bg-white rounded-2xl shadow-xl border border-green-200 p-8 text-center">
-                    <div className="w-20 h-20 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-6">
-                        <CheckCircle size={40} />
-                    </div>
-                    <h2 className="text-3xl font-bold text-slate-900 mb-2">Sukces!</h2>
-                    <p className="text-slate-600 mb-8">
-                        Dane zostały sformatowane i udostępnione dla portalu dane.gov.pl.
-                    </p>
+            <>
+                {/* --- 1. WIDOK EKRANOWY (Ukryty podczas druku: print:hidden) --- */}
+                <div className="max-w-6xl mx-auto px-4 py-8 animate-in zoom-in-95 duration-500 print:hidden">
+                    <div className="max-w-3xl mx-auto bg-white rounded-2xl shadow-xl border border-green-200 p-8 text-center">
+                        <div className="w-20 h-20 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-6">
+                            <CheckCircle size={40} />
+                        </div>
+                        <h2 className="text-3xl font-bold text-slate-900 mb-2">Sukces!</h2>
+                        <p className="text-slate-600 mb-8">
+                            Dane zostały opublikowane.
+                        </p>
 
-                    <div className="bg-slate-50 rounded-xl p-6 mb-8 text-left space-y-4 border border-slate-200">
-                        <div className="flex items-center justify-between p-3 bg-white rounded-lg border border-slate-200">
-                            <div className="flex items-center gap-3">
-                                <FileText className="text-green-600" />
-                                <div>
-                                    <p className="font-bold text-sm">Plik Danych (CSV)</p>
-                                    <p className="text-xs text-slate-500">Surowe dane o zgubie</p>
+                        <div className="bg-slate-50 rounded-xl p-6 mb-8 text-left space-y-4 border border-slate-200">
+                            <div className="flex items-center justify-between p-3 bg-white rounded-lg border border-slate-200">
+                                <div className="flex items-center gap-3">
+                                    <FileText className="text-green-600" />
+                                    <div>
+                                        <p className="font-bold text-sm">Plik Danych (CSV)</p>
+                                        <p className="text-xs text-slate-500">Surowe dane o zgubie</p>
+                                    </div>
                                 </div>
+                                <a href={publishResult.csv} target="_blank" rel="noreferrer" className="text-blue-600 hover:underline text-sm font-bold">Pobierz</a>
                             </div>
-                            <a href={publishResult.csv} target="_blank" rel="noreferrer" className="text-blue-600 hover:underline text-sm font-bold">Pobierz</a>
                         </div>
-                    </div>
 
-                    <div className="flex justify-center mb-6">
-                        <div className="p-4 bg-white border-2 border-slate-200 rounded-xl">
-                            <p className="text-xs text-slate-400 mb-2 uppercase font-bold tracking-wider">Kod QR Zgłoszenia</p>
-                            <img src={publishResult.qr} alt="QR Code" className="w-32 h-32" />
+                        <div className="flex justify-center mb-6">
+                            <div className="p-4 bg-white rounded-xl flex flex-col items-center gap-4">
+                                <p className="text-xs text-slate-400 uppercase font-bold tracking-wider">Kod QR Zgłoszenia</p>
+                                <img src={publishResult.qr} alt="QR Code" className="w-48 h-48" />
+
+                                {/* --- PRZYCISK DRUKUJ --- */}
+                                <button
+                                    onClick={handlePrint}
+                                    className="w-full py-3 px-6 bg-slate-800 text-white rounded-xl font-bold hover:bg-slate-900 transition shadow-lg flex items-center justify-center gap-2"
+                                >
+                                    <Printer size={20} /> DRUKUJ ETYKIETĘ
+                                </button>
+                            </div>
                         </div>
-                    </div>
 
-                    <button onClick={() => window.location.reload()} className="px-6 py-3 bg-slate-900 text-white rounded-lg font-bold hover:bg-slate-800 transition-colors">
-                        Rozpocznij nowe zgłoszenie
-                    </button>
+                        <button onClick={() => window.location.reload()} className="px-6 py-3 bg-slate-900 text-white rounded-lg font-bold hover:bg-slate-800 transition-colors">
+                            Rozpocznij nowe zgłoszenie
+                        </button>
+                    </div>
                 </div>
-            </div>
+
+                {/* --- 2. WIDOK WYDRUKU (Tylko ID i QR) --- */}
+                <div className="hidden print:flex fixed inset-0 z-[10000] bg-white flex-col items-center justify-center h-screen w-screen p-0 m-0">
+
+                    {/* KOD QR (Bardzo duży) */}
+                    <img
+                        src={publishResult.qr}
+                        alt="QR"
+                        className="w-[500px] h-[500px] max-w-[90vw]"
+                        style={{ imageRendering: 'pixelated' }}
+                    />
+
+                </div>
+            </>
         );
     }
 
+    // Widok weryfikacji (przed publikacją)
     return (
-        // ZMIANA: max-w-6xl
-        <div className="max-w-6xl mx-auto px-4 py-8 animate-in zoom-in-95 duration-500">
+        <div className="max-w-6xl mx-auto px-4 py-8 animate-in zoom-in-95 duration-500 print:hidden">
             <div className="text-center mb-10">
                 <div className="w-16 h-16 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-4 ring-8 ring-blue-50">
                     <CheckCircle size={32} />
@@ -91,7 +117,6 @@ const SummaryPage = () => {
                 <p className="text-slate-500 mt-2">Upewnij się, że wszystko się zgadza przed wystawieniem danych.</p>
             </div>
 
-            {/* Wewnętrzny kontener dla czytelności */}
             <div className="max-w-4xl mx-auto bg-white rounded-2xl shadow-xl border border-slate-200 overflow-hidden">
                 <div className="p-8">
                     <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-6">Podgląd rekordu</h3>
