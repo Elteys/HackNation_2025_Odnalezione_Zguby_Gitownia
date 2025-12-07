@@ -14,7 +14,6 @@ const xml2js = require('xml2js');
 const app = express();
 const port = process.env.PORT || 3001;
 
-// --- KONFIGURACJA ---
 const MY_PUBLIC_HOST = process.env.PUBLIC_HOST || `https://localhost:${port}`;
 const FRONTEND_URL = 'https://localhost:5173/#/szczegoly'; 
 
@@ -23,10 +22,7 @@ const OFFICE_ID = "2";
 const BASE_OUTPUT_DIR = path.join(__dirname, 'public_files');
 const CSV_DIR = path.join(BASE_OUTPUT_DIR, 'csv');
 const QR_DIR = path.join(BASE_OUTPUT_DIR, 'qr');
-
-// Ścieżki do plików XML i MD5 (są w folderze głównym serwera)
 const XML_PATH = path.join(__dirname, 'zguby.xml');
-const MD5_PATH = path.join(__dirname, 'zguby.md5');
 
 if (!fsSync.existsSync(CSV_DIR)) fsSync.mkdirSync(CSV_DIR, { recursive: true });
 if (!fsSync.existsSync(QR_DIR)) fsSync.mkdirSync(QR_DIR, { recursive: true });
@@ -34,8 +30,6 @@ if (!fsSync.existsSync(QR_DIR)) fsSync.mkdirSync(QR_DIR, { recursive: true });
 app.use(cors({ origin: '*' }));
 app.use(express.json({ limit: '10mb' }));
 app.use('/files', express.static(BASE_OUTPUT_DIR));
-
-// --- HELPERY ---
 
 async function getCsvFilePath() {
     try {
@@ -72,15 +66,15 @@ async function getCsvFilePath() {
 
 async function readRecords() {
     try {
-        const filePath = await getCsvFilePath(); 
+        const filePath = await getCsvFilePath(); // Dynamiczna ścieżka
         await fs.access(filePath);
         const content = await fs.readFile(filePath, 'utf8');
         
         const cleanContent = content.charCodeAt(0) === 0xFEFF ? content.slice(1) : content;
 
-        return parse(cleanContent, { 
-            columns: true, 
-            skip_empty_lines: true, 
+        return parse(cleanContent, {
+            columns: true,
+            skip_empty_lines: true,
             trim: true,
             relax_quotes: true
         });
@@ -107,9 +101,7 @@ async function writeRecords(records) {
     await fs.writeFile(filePath, '\uFEFF' + output, 'utf8');
 }
 
-// --- ENDPOINTY ---
 
-// 1. PUBLIKACJA
 app.post('/api/publish-data', async (req, res) => {
     try {
         const formData = req.body;
@@ -152,10 +144,7 @@ app.post('/api/publish-data', async (req, res) => {
             files: {
                 csv: `${MY_PUBLIC_HOST}/files/csv/${fileName}`,
                 qr: `${MY_PUBLIC_HOST}/files/qr/${qrName}`,
-                itemLink: linkToItem,
-                // Linki dla Importera
-                xmlUrl: `${MY_PUBLIC_HOST}/api/zguby`,
-                md5Url: `${MY_PUBLIC_HOST}/api/zguby/md5`
+                itemLink: linkToItem
             }
         });
 
@@ -165,7 +154,6 @@ app.post('/api/publish-data', async (req, res) => {
     }
 });
 
-// 2. SZCZEGÓŁY
 app.get('/api/item/:id', async (req, res) => {
     try {
         const { id } = req.params;
@@ -202,7 +190,6 @@ app.get('/api/item/:id', async (req, res) => {
     }
 });
 
-// 3. ODBIÓR
 app.post('/api/item/:id/return', async (req, res) => {
     try {
         const { id } = req.params;
@@ -225,7 +212,6 @@ app.post('/api/item/:id/return', async (req, res) => {
     }
 });
 
-// 4. POBIERANIE CSV
 app.get('/api/csv/:office', async (req, res) => {
     try {
         const { office } = req.params;
@@ -248,7 +234,6 @@ app.get('/api/csv/:office', async (req, res) => {
     }
 });
 
-// 5. POBIERANIE XML (zguby.xml)
 app.get('/api/zguby', (req, res) => {
     console.log(`[INFO] Próba pobrania XML z: ${XML_PATH}`);
 
@@ -259,7 +244,7 @@ app.get('/api/zguby', (req, res) => {
 
     res.download(XML_PATH, 'zguby.xml', (err) => {
         if (err) {
-            console.error("[BŁĄD] Błąd podczas wysyłania pliku XML:", err);
+            console.error("[BŁĄD] Błąd podczas wysyłania pliku:", err);
             if (!res.headersSent) {
                 res.status(500).send("Błąd serwera przy pobieraniu pliku.");
             }
@@ -267,27 +252,7 @@ app.get('/api/zguby', (req, res) => {
     });
 });
 
-// 6. POBIERANIE MD5 (zguby.md5) - NOWOŚĆ
-app.get('/api/zguby/md5', (req, res) => {
-    console.log(`[INFO] Próba pobrania MD5 z: ${MD5_PATH}`);
 
-    if (!fsSync.existsSync(MD5_PATH)) {
-        console.error("[BŁĄD] Plik zguby.md5 nie istnieje w podanej ścieżce!");
-        return res.status(404).json({ success: false, error: "Nie znaleziono pliku zguby.md5" });
-    }
-
-    res.download(MD5_PATH, 'zguby.md5', (err) => {
-        if (err) {
-            console.error("[BŁĄD] Błąd podczas wysyłania pliku MD5:", err);
-            if (!res.headersSent) {
-                res.status(500).send("Błąd serwera przy pobieraniu pliku MD5.");
-            }
-        }
-    });
-});
-
-
-// --- START SERWERA (HTTPS) ---
 try {
     const httpsOptions = {
         key: fsSync.readFileSync(path.join(__dirname, 'localhost-key.pem')),
@@ -296,11 +261,8 @@ try {
 
     https.createServer(httpsOptions, app).listen(port, async () => {
         console.log(`Bezpieczny serwer HTTPS działa na porcie ${port}`);
-        console.log(`https://localhost:${port}`);
-        console.log(`XML: https://localhost:${port}/api/zguby`);
-        console.log(`MD5: https://localhost:${port}/api/zguby/md5`);
-        
-        await getCsvFilePath(); // Testowe sprawdzenie czy XML ma sens
+        console.log(`Weryfikacja XML...`);
+        await getCsvFilePath();
     });
 } catch (error) {
     console.error("BŁĄD HTTPS: Nie znaleziono plików .pem! Uruchamiam zwykłe HTTP.");
