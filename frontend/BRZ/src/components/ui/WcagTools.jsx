@@ -22,6 +22,11 @@ const WcagTools = () => {
         setContrast(contrastModes[nextIndex]);
     };
 
+    // Klasa dla przycisków:
+    // - "wcag-btn": nasza klasa do kolorów w CSS
+    // - Reszta: Tailwind do rozmiarów i układu (to co zniknęło wcześniej)
+    const btnClass = "wcag-btn p-1.5 rounded-md transition-all focus-gov flex items-center justify-center text-slate-600 hover:text-blue-900 hover:bg-slate-200/50 disabled:opacity-30 disabled:cursor-not-allowed";
+
     return (
         <div
             className="flex items-center gap-1 sm:gap-2 bg-slate-100/90 backdrop-blur-sm px-3 py-1.5 rounded-full border border-slate-200 shadow-sm"
@@ -34,17 +39,18 @@ const WcagTools = () => {
                 <button
                     onClick={() => handleFontChange(-1)}
                     disabled={fontSizeLevel === MIN_FONT}
-                    className="p-1.5 text-slate-600 hover:text-blue-900 disabled:opacity-30 disabled:cursor-not-allowed transition-colors focus-gov rounded-md"
+                    className={btnClass}
                     title="Zmniejsz czcionkę"
                 >
-                    <Minus size={16} strokeWidth={3} />
+                    <Minus size={18} strokeWidth={2.5} />
                 </button>
 
-                <div className="mx-1 flex flex-col items-center justify-center w-6" aria-hidden="true">
-                    <span className="text-xs font-extrabold text-slate-700">A</span>
-                    <div className="flex gap-0.5 mt-0.5">
+                {/* Wskaźnik poziomu (A i kropki) */}
+                <div className="mx-2 flex flex-col items-center justify-center w-6 wcag-indicator" aria-hidden="true">
+                    <span className="text-sm font-extrabold leading-none">A</span>
+                    <div className="flex gap-0.5 mt-1">
                         {[...Array(MAX_FONT)].map((_, i) => (
-                            <div key={i} className={`w-0.5 h-0.5 rounded-full ${i < fontSizeLevel ? 'bg-blue-600' : 'bg-slate-300'}`} />
+                            <div key={i} className={`w-1 h-1 rounded-full ${i < fontSizeLevel ? 'bg-blue-600 active-dot' : 'bg-slate-300 inactive-dot'}`} />
                         ))}
                     </div>
                 </div>
@@ -52,23 +58,24 @@ const WcagTools = () => {
                 <button
                     onClick={() => handleFontChange(1)}
                     disabled={fontSizeLevel === MAX_FONT}
-                    className="p-1.5 text-slate-600 hover:text-blue-900 disabled:opacity-30 disabled:cursor-not-allowed transition-colors focus-gov rounded-md"
+                    className={btnClass}
                     title="Zwiększ czcionkę"
                 >
-                    <Plus size={16} strokeWidth={3} />
+                    <Plus size={18} strokeWidth={2.5} />
                 </button>
             </div>
 
-            <div className="w-px h-5 bg-slate-300 mx-1 sm:mx-2" />
+            {/* Separator */}
+            <div className="w-px h-6 bg-slate-300 mx-1 sm:mx-2 separator" />
 
-            {/* 2. KONTRAST (Klasa 'wcag-contrast-toggle' jest kluczowa dla CSS) */}
+            {/* 2. KONTRAST */}
             <button
                 onClick={cycleContrast}
-                className="wcag-contrast-toggle flex items-center gap-2 px-2 py-1 rounded-md transition-all focus-gov border-2 border-transparent"
+                className={`${btnClass} gap-2 px-2`}
                 title="Zmień kontrast"
                 aria-label={`Zmień kontrast. Aktualny tryb: ${contrastMode}`}
             >
-                <Sun size={18} className="icon-sun" fill={contrastMode !== 'normal' ? "currentColor" : "none"} />
+                <Sun size={20} className="icon-sun" fill={contrastMode !== 'normal' ? "currentColor" : "none"} />
                 <span className="hidden lg:inline text-xs font-bold uppercase tracking-wider">
                     Kontrast
                 </span>
