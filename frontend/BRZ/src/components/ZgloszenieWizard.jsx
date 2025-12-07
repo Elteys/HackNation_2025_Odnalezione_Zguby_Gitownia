@@ -1,10 +1,9 @@
 import React, { useState, useRef } from 'react';
 import { Camera, FileText, ArrowRight, ArrowLeft, CheckCircle, Upload, Loader2, MapPin } from 'lucide-react';
-import { analyzeImage } from '../services/aiService'; // Twój serwis z poprzedniego kroku
+import { analyzeImage } from '../services/aiService';
 
 const ZgloszenieWizard = () => {
-    // --- STAN APLIKACJI ---
-    const [step, setStep] = useState(1); // 1: Wybór, 2: Formularz, 3: Podsumowanie
+    const [step, setStep] = useState(1); 
     const [loading, setLoading] = useState(false);
     const [preview, setPreview] = useState(null);
     const fileInputRef = useRef(null);
@@ -14,13 +13,10 @@ const ZgloszenieWizard = () => {
         nazwa: '',
         opis: '',
         kolor: '',
-        miejsce: '', // Dodatkowe pole
+        miejsce: '', 
         data: new Date().toISOString().split('T')[0]
     });
 
-    // --- LOGIKA ---
-
-    // Pomocnik: Base64
     const fileToBase64 = (file) => {
         return new Promise((resolve, reject) => {
             const reader = new FileReader();
@@ -30,7 +26,6 @@ const ZgloszenieWizard = () => {
         });
     };
 
-    // Parsowanie XML (z poprzedniego kroku)
     const parseXMLToForm = (xmlString) => {
         const parser = new DOMParser();
         const xmlDoc = parser.parseFromString(xmlString, "text/xml");
@@ -48,7 +43,6 @@ const ZgloszenieWizard = () => {
         }));
     };
 
-    // Obsługa wyboru AI
     const handleAiSelect = () => {
         fileInputRef.current.click();
     };
@@ -64,7 +58,7 @@ const ZgloszenieWizard = () => {
             const base64 = await fileToBase64(file);
             const xmlResult = await analyzeImage(base64);
             parseXMLToForm(xmlResult);
-            setStep(2); // Przejdź do formularza po sukcesie
+            setStep(2); 
         } catch (error) {
             alert("Błąd AI - spróbuj ponownie lub wpisz ręcznie.");
         } finally {
@@ -79,15 +73,12 @@ const ZgloszenieWizard = () => {
 
     const handlePublish = () => {
         alert("Dane wysłane do API dane.gov.pl! (Tu następuje generowanie QR)");
-        // Tu można zresetować stan
     };
 
-    // --- KOMPONENTY WIDOKU ---
 
     return (
         <div className="min-h-screen bg-slate-50 font-sans text-slate-800">
 
-            {/* NAGŁÓWEK GOV STYLE */}
             <header className="bg-white shadow-sm border-b-4 border-red-600">
                 <div className="max-w-4xl mx-auto px-6 py-4 flex items-center gap-3">
                     <div className="w-10 h-10 bg-red-600 rounded-full flex items-center justify-center text-white font-bold">
@@ -100,10 +91,8 @@ const ZgloszenieWizard = () => {
                 </div>
             </header>
 
-            {/* GŁÓWNY KONTENER */}
             <main className="max-w-3xl mx-auto mt-8 px-4 pb-12">
 
-                {/* PASEK POSTĘPU */}
                 <div className="flex justify-between mb-8 relative">
                     <div className="absolute top-1/2 left-0 w-full h-1 bg-slate-200 -z-10 rounded"></div>
                     {[1, 2, 3].map((s) => (
@@ -116,7 +105,6 @@ const ZgloszenieWizard = () => {
                     ))}
                 </div>
 
-                {/* LOADING OVERLAY */}
                 {loading && (
                     <div className="fixed inset-0 bg-white/80 backdrop-blur-sm z-50 flex flex-col items-center justify-center">
                         <Loader2 className="w-12 h-12 text-blue-600 animate-spin mb-4" />
@@ -125,13 +113,11 @@ const ZgloszenieWizard = () => {
                     </div>
                 )}
 
-                {/* --- KROK 1: WYBÓR METODY --- */}
                 {step === 1 && (
                     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
                         <h2 className="text-2xl font-bold text-center text-slate-800">W jaki sposób chcesz dodać zgubę?</h2>
 
                         <div className="grid md:grid-cols-2 gap-6 mt-8">
-                            {/* KARTA AI */}
                             <button
                                 onClick={handleAiSelect}
                                 className="group relative bg-white p-8 rounded-2xl shadow-md border-2 border-transparent hover:border-blue-500 hover:shadow-xl transition-all text-left"
@@ -146,7 +132,6 @@ const ZgloszenieWizard = () => {
                                 <p className="text-slate-500 text-sm mt-2">
                                     Zrób zdjęcie, a system automatycznie wypełni formularz, rozpozna kategorię i opisze przedmiot.
                                 </p>
-                                {/* Ukryty input */}
                                 <input
                                     type="file"
                                     ref={fileInputRef}
@@ -156,7 +141,6 @@ const ZgloszenieWizard = () => {
                                 />
                             </button>
 
-                            {/* KARTA RĘCZNA */}
                             <button
                                 onClick={handleManualSelect}
                                 className="bg-white p-8 rounded-2xl shadow-md border-2 border-transparent hover:border-slate-400 hover:shadow-xl transition-all text-left"
@@ -173,7 +157,6 @@ const ZgloszenieWizard = () => {
                     </div>
                 )}
 
-                {/* --- KROK 2: FORMULARZ --- */}
                 {step === 2 && (
                     <div className="bg-white p-6 md:p-8 rounded-2xl shadow-lg animate-in fade-in slide-in-from-right-8 duration-300">
                         <div className="flex items-center justify-between mb-6">
@@ -184,7 +167,6 @@ const ZgloszenieWizard = () => {
                         </div>
 
                         <div className="grid gap-6">
-                            {/* Sekcja Kategorii */}
                             <div className="grid md:grid-cols-2 gap-4">
                                 <div>
                                     <label className="block text-sm font-medium text-slate-700 mb-1">Kategoria</label>
@@ -212,7 +194,6 @@ const ZgloszenieWizard = () => {
                                 </div>
                             </div>
 
-                            {/* Opis */}
                             <div>
                                 <label className="block text-sm font-medium text-slate-700 mb-1">
                                     Szczegółowy opis
@@ -226,7 +207,6 @@ const ZgloszenieWizard = () => {
                                 />
                             </div>
 
-                            {/* Kontekst */}
                             <div className="grid md:grid-cols-2 gap-4">
                                 <div>
                                     <label className="block text-sm font-medium text-slate-700 mb-1">Data znalezienia</label>
@@ -253,7 +233,6 @@ const ZgloszenieWizard = () => {
                             </div>
                         </div>
 
-                        {/* Nawigacja */}
                         <div className="flex justify-between mt-8 pt-6 border-t border-slate-100">
                             <button
                                 onClick={() => setStep(1)}
@@ -271,7 +250,6 @@ const ZgloszenieWizard = () => {
                     </div>
                 )}
 
-                {/* --- KROK 3: PODSUMOWANIE --- */}
                 {step === 3 && (
                     <div className="bg-white p-6 md:p-8 rounded-2xl shadow-lg animate-in fade-in slide-in-from-right-8 duration-300">
                         <div className="text-center mb-8">

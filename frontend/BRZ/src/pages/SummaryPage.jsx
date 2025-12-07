@@ -37,7 +37,6 @@ const SummaryPage = () => {
         }
     };
 
-    // Funkcja wywołująca natywne okno drukowania
     const handlePrint = () => {
         window.print();
     };
@@ -45,7 +44,6 @@ const SummaryPage = () => {
     if (publishResult) {
         return (
             <>
-                {/* --- 1. WIDOK EKRANOWY (Ukryty podczas druku: print:hidden) --- */}
                 <div className="max-w-6xl mx-auto px-4 py-8 animate-in zoom-in-95 duration-500 print:hidden">
                     <div className="max-w-3xl mx-auto bg-white rounded-2xl shadow-xl border border-green-200 p-8 text-center">
                         <div className="w-20 h-20 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-6">
@@ -74,7 +72,6 @@ const SummaryPage = () => {
                                 <p className="text-xs text-slate-400 uppercase font-bold tracking-wider">Kod QR Zgłoszenia</p>
                                 <img src={publishResult.qr} alt="QR Code" className="w-48 h-48" />
 
-                                {/* --- PRZYCISK DRUKUJ --- */}
                                 <button
                                     onClick={handlePrint}
                                     className="w-full py-3 px-6 bg-slate-800 text-white rounded-xl font-bold hover:bg-slate-900 transition shadow-lg flex items-center justify-center gap-2"
@@ -90,10 +87,8 @@ const SummaryPage = () => {
                     </div>
                 </div>
 
-                {/* --- 2. WIDOK WYDRUKU (Tylko ID i QR) --- */}
                 <div className="hidden print:flex fixed inset-0 z-[10000] bg-white flex-col items-center justify-center h-screen w-screen p-0 m-0">
 
-                    {/* KOD QR (Bardzo duży) */}
                     <img
                         src={publishResult.qr}
                         alt="QR"
@@ -106,7 +101,6 @@ const SummaryPage = () => {
         );
     }
 
-    // Widok weryfikacji (przed publikacją)
     return (
         <div className="max-w-6xl mx-auto px-4 py-8 animate-in zoom-in-95 duration-500 print:hidden">
             <div className="text-center mb-10">

@@ -22,9 +22,6 @@ const WcagTools = () => {
         setContrast(contrastModes[nextIndex]);
     };
 
-    // Klasa dla przycisków:
-    // - "wcag-btn": nasza klasa do kolorów w CSS
-    // - Reszta: Tailwind do rozmiarów i układu (to co zniknęło wcześniej)
     const btnClass = "wcag-btn p-1.5 rounded-md transition-all focus-gov flex items-center justify-center text-slate-600 hover:text-blue-900 hover:bg-slate-200/50 disabled:opacity-30 disabled:cursor-not-allowed";
 
     return (
@@ -34,7 +31,6 @@ const WcagTools = () => {
             aria-label="Narzędzia dostępności"
         >
 
-            {/* 1. ZMIANA CZCIONKI */}
             <div className="flex items-center" role="group" aria-label="Rozmiar tekstu">
                 <button
                     onClick={() => handleFontChange(-1)}
@@ -45,7 +41,6 @@ const WcagTools = () => {
                     <Minus size={18} strokeWidth={2.5} />
                 </button>
 
-                {/* Wskaźnik poziomu (A i kropki) */}
                 <div className="mx-2 flex flex-col items-center justify-center w-6 wcag-indicator" aria-hidden="true">
                     <span className="text-sm font-extrabold leading-none">A</span>
                     <div className="flex gap-0.5 mt-1">
@@ -65,10 +60,8 @@ const WcagTools = () => {
                 </button>
             </div>
 
-            {/* Separator */}
             <div className="w-px h-6 bg-slate-300 mx-1 sm:mx-2 separator" />
 
-            {/* 2. KONTRAST */}
             <button
                 onClick={cycleContrast}
                 className={`${btnClass} gap-2 px-2`}

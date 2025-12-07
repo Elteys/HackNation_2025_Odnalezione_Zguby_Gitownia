@@ -12,7 +12,6 @@ const Home = () => {
     const qrInputRef = useRef(null);
     const [loading, setLoading] = useState(false);
 
-    // --- LOGIKA ---
     const fileToBase64 = (file) => new Promise((resolve, reject) => {
         const reader = new FileReader();
         reader.readAsDataURL(file);
@@ -74,11 +73,8 @@ const Home = () => {
         }
     };
 
-    // --- WIDOK ---
     return (
         <div className="animate-in fade-in duration-700 max-w-6xl mx-auto px-4 py-6 md:py-12">
-
-            {/* NAGŁÓWEK */}
             <div className="text-center mb-8 md:mb-12">
                 <h1 className="text-2xl md:text-4xl font-extrabold text-slate-900 tracking-tight mb-3 md:mb-4">
                     Dodaj nowy przedmiot
@@ -96,27 +92,22 @@ const Home = () => {
                 </div>
             ) : (
                 <>
-                    {/* GŁÓWNE OPCJE (AI + RĘCZNIE) */}
                     <div className="space-y-4 md:space-y-0 md:grid md:grid-cols-2 md:gap-8 items-stretch">
 
-                        {/* 1. PRZYCISK AI */}
                         <button
                             onClick={() => fileInputRef.current.click()}
-                            // Dodano h-full aby przycisk zajmował całą wysokość w gridzie
                             className="cursor-pointer group w-full h-full relative flex flex-row md:flex-col items-center md:items-start text-left bg-white p-5 md:p-8 rounded-2xl md:rounded-3xl shadow-md border border-slate-100 transition-all active:scale-95 md:active:scale-100 md:hover:shadow-xl md:hover:border-blue-500/50 focus-gov"
                         >
                             <div className="shrink-0 w-12 h-12 md:w-16 md:h-16 bg-blue-50 text-blue-600 rounded-xl md:rounded-2xl flex items-center justify-center mr-4 md:mr-0 md:mb-6 group-hover:bg-blue-600 group-hover:text-white transition-colors">
                                 <Camera className="w-6 h-6 md:w-9 md:h-9" />
                             </div>
 
-                            {/* Wrapper tekstu: flex-col i h-full są kluczowe dla wyrównania do dołu */}
                             <div className="flex-1 flex flex-col w-full h-full">
                                 <h2 className="text-lg md:text-2xl font-bold text-slate-900 mb-1 md:mb-2">Automatycznie (AI)</h2>
                                 <p className="text-sm md:text-base text-slate-500 mb-0 md:mb-6 leading-tight md:leading-relaxed">
                                     Zrób zdjęcie, a AI uzupełni opis i przetłumaczy go.
                                 </p>
 
-                                {/* mt-auto wypycha ten element na sam dół kontenera */}
                                 <span className="hidden md:inline-flex mt-auto items-center text-blue-700 font-bold group-hover:gap-2 transition-all pt-4">
                                     Rozpocznij <ArrowRight size={20} className="ml-1" />
                                 </span>
@@ -126,24 +117,20 @@ const Home = () => {
                             <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleFileChange} tabIndex="-1" />
                         </button>
 
-                        {/* 2. PRZYCISK RĘCZNY */}
                         <button
                             onClick={() => { setImagePreview(null); navigate('/formularz'); }}
-                            // Dodano h-full
                             className="cursor-pointer group w-full h-full relative flex flex-row md:flex-col items-center md:items-start text-left bg-white p-5 md:p-8 rounded-2xl md:rounded-3xl shadow-md border border-slate-100 transition-all active:scale-95 md:active:scale-100 md:hover:shadow-xl md:hover:border-slate-400/50 focus-gov"
                         >
                             <div className="shrink-0 w-12 h-12 md:w-16 md:h-16 bg-slate-100 text-slate-600 rounded-xl md:rounded-2xl flex items-center justify-center mr-4 md:mr-0 md:mb-6 group-hover:bg-slate-800 group-hover:text-white transition-colors">
                                 <FileText className="w-6 h-6 md:w-9 md:h-9" />
                             </div>
 
-                            {/* Wrapper tekstu: flex-col i h-full */}
                             <div className="flex-1 flex flex-col w-full h-full">
                                 <h2 className="text-lg md:text-2xl font-bold text-slate-900 mb-1 md:mb-2">Ręcznie</h2>
                                 <p className="text-sm md:text-base text-slate-500 mb-0 md:mb-6 leading-tight md:leading-relaxed">
                                     Tradycyjny formularz bez zdjęcia.
                                 </p>
 
-                                {/* mt-auto wypycha ten element na sam dół */}
                                 <span className="hidden md:inline-flex mt-auto items-center text-slate-700 font-bold group-hover:gap-2 transition-all pt-4">
                                     Wypełnij <ArrowRight size={20} className="ml-1" />
                                 </span>
@@ -153,13 +140,11 @@ const Home = () => {
                         </button>
                     </div>
 
-                    {/* NOWA SEKCJA: "INNE OPCJE" (TYLKO MOBILE) */}
                     <div className="md:hidden mt-8">
                         <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-3 ml-1">
                             Inne opcje
                         </h3>
 
-                        {/* 3. PRZYCISK SKANOWANIA QR */}
                         <button
                             onClick={() => qrInputRef.current.click()}
                             className="cursor-pointer group w-full relative flex flex-row items-center text-left bg-slate-900 text-white p-5 rounded-2xl shadow-lg shadow-slate-900/20 active:scale-95 transition-all focus-gov"

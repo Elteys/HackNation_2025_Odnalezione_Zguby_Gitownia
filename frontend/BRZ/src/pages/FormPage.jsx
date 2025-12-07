@@ -138,14 +138,12 @@ const FormPage = () => {
     return (
         <div className="max-w-6xl mx-auto w-full md:px-4 md:py-10 animate-in slide-in-from-right-8 duration-500">
 
-            {/* NAGŁÓWEK ZE STRZAŁKĄ (Back Button) */}
             <header className="flex justify-between items-start mb-6 md:mb-8 gap-4 px-4 md:px-0 pt-6 md:pt-0">
                 <div className="flex items-center gap-3 md:gap-4">
-                    {/* NOWY PRZYCISK POWROTU - STRZAŁKA */}
                     <button
                         onClick={() => {
-                            resetForm();   // wyczyść formularz
-                            navigate('/'); // przejdź na stronę główną
+                            resetForm();   
+                            navigate('/'); 
                         }}
                         className="p-2 -ml-2 md:ml-0 rounded-full hover:bg-slate-200 text-slate-600 transition-colors focus-gov"
                         aria-label="Wróć do strony głównej"
@@ -226,7 +224,7 @@ const FormPage = () => {
                                         onClick={async () => {
                                             setActiveLang(lang);
 
-                                            if (lang === 'PL') return; // nie tłumaczymy polskiego
+                                            if (lang === 'PL') return; 
                                             if (!formData.opis || formData.opis.length < 3) {
                                                 alert("Najpierw wpisz opis po polsku!");
                                                 return;
@@ -319,7 +317,6 @@ const FormPage = () => {
                     </div>
                 </div>
 
-                {/* STOPKA: Tylko jeden przycisk, Anuluj usunięte */}
                 <div className="bg-slate-50 p-4 md:p-6 border-t border-slate-200">
                     <button
                         onClick={handleNextStep}
