@@ -1,28 +1,23 @@
 import React from 'react';
 import { HashRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
-import { AnimatePresence } from 'framer-motion'; // <--- Import
+import { AnimatePresence } from 'framer-motion';
 import { FormProvider } from './context/FormContext';
 import { AccessibilityProvider } from './context/AccessibilityContext';
 import DetailsPage from './pages/DetailsPage';
 
-// Layout
 import Navbar from './components/layout/Navbar';
 import Footer from './components/layout/Footer';
 
-// Pages
 import Home from './pages/Home';
 import FormPage from './pages/FormPage';
 import SummaryPage from './pages/SummaryPage';
 
-// Transition Wrapper
-import PageTransition from './components/layout/PageTransition'; // <--- Import
+import PageTransition from './components/layout/PageTransition';
 
-// Osobny komponent dla Routes, żeby użyć useLocation()
 const AnimatedRoutes = () => {
   const location = useLocation();
 
   return (
-    // mode="wait" oznacza: najpierw schowaj starą stronę, potem pokaż nową
     <AnimatePresence mode="wait">
       <Routes location={location} key={location.pathname}>
         <Route path="/" element={
