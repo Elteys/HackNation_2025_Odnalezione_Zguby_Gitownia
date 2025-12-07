@@ -1,89 +1,170 @@
-/* 1. NAJWAŻNIEJSZE: Import Tailwinda (Musi być na górze!) */
 @import "tailwindcss";
-
-/* 2. Plugin do animacji */
 @plugin "tailwindcss-animate";
 
-/* 3. Konfiguracja fontów i tła */
 :root {
   font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;
-  font-weight: 400;
 }
 
+/* Domyślny wygląd */
 body {
   @apply bg-slate-50 text-slate-900 antialiased;
 }
 
-/* 4. UTILITIES: Nasz Focus dla WCAG (Musi być po imporcie Tailwinda) */
+/* Focus WCAG (Domyślny - Żółty) */
 @layer utilities {
   .focus-gov {
-    @apply focus:outline-none focus-visible:ring-4 focus-visible:ring-yellow-400 focus-visible:ring-offset-2 focus-visible:ring-offset-white;
+    @apply focus:outline-none focus-visible:ring-4 focus-visible:ring-yellow-400 focus-visible:ring-offset-2;
   }
 }
 
-/* 5. WYSOKI KONTRAST (Style nadpisujące) */
-/* Ważne: Te style aktywują się TYLKO gdy body ma klasę .high-contrast */
+/* ==========================================================================
+   GLOBALNE ZASADY DLA TRYBÓW WYSOKIEGO KONTRASTU
+   (Tylko jeśli NIE jest to theme-normal)
+   ========================================================================== */
 
-body.high-contrast {
-  background-color: #000000 !important;
-  color: #ffff00 !important;
+/* 1. Obrazki czarno-białe (ALE NIE W TRYBIE NORMALNYM!) */
+body:not(.theme-normal) img,
+body:not(.theme-normal) video {
+  filter: grayscale(100%) contrast(120%) !important;
 }
 
-body.high-contrast * {
-  background-color: #000000 !important;
-  color: #ffff00 !important;
-  border-color: #ffff00 !important;
+/* 2. Ikony muszą brać kolor z tekstu */
+body:not(.theme-normal) svg {
+  stroke: currentColor !important;
+  fill: none !important;
+  color: inherit !important;
+}
+
+/* 3. Wymuszenie ramek na formularzach (dla lepszej widoczności) */
+body:not(.theme-normal) input,
+body:not(.theme-normal) select,
+body:not(.theme-normal) textarea,
+body:not(.theme-normal) button {
+  border-width: 2px !important;
+  border-style: solid !important;
   box-shadow: none !important;
 }
 
-/* Wyjątki dla obrazków w kontraście */
-body.high-contrast img,
-body.high-contrast svg {
-  background-color: transparent !important;
-  filter: grayscale(100%) contrast(120%);
-}
-
-/* Wyjątki dla inputów i przycisków */
-body.high-contrast button,
-body.high-contrast input,
-body.high-contrast select,
-body.high-contrast textarea {
-  border: 2px solid #ffff00 !important;
+/* ==========================================================================
+   MOTYW 1: ŻÓŁTY NA CZARNYM (theme-yellow-black)
+   ========================================================================== */
+body.theme-yellow-black {
   background-color: #000000 !important;
+  color: #ffff00 !important;
 }
 
-body.high-contrast button:hover {
+body.theme-yellow-black * {
+  background-color: #000000 !important;
+  color: #ffff00 !important;
+  border-color: #ffff00 !important;
+}
+
+/* AKTYWNY PRZYCISK / HOVER (Inwersja kolorów) */
+body.theme-yellow-black button:hover,
+body.theme-yellow-black a:hover,
+body.theme-yellow-black select:hover,
+body.theme-yellow-black input:hover,
+body.theme-yellow-black .group:hover,
+body.theme-yellow-black .active-wcag-btn
+
+/* <--- To naprawia widoczność wybranego trybu */
+  {
+  background-color: #ffff00 !important;
+  color: #000000 !important;
+  border-color: #ffff00 !important;
+}
+
+/* Dzieci wewnątrz aktywnego elementu też muszą zmienić kolor */
+body.theme-yellow-black button:hover *,
+body.theme-yellow-black a:hover *,
+body.theme-yellow-black .active-wcag-btn * {
+  color: #000000 !important;
+  stroke: #000000 !important;
+}
+
+/* Focus */
+body.theme-yellow-black *:focus-visible {
+  outline: 4px solid #ffff00 !important;
+  outline-offset: 4px !important;
+}
+
+
+/* ==========================================================================
+   MOTYW 2: CZARNY NA ŻÓŁTYM (theme-black-yellow)
+   ========================================================================== */
+body.theme-black-yellow {
   background-color: #ffff00 !important;
   color: #000000 !important;
 }
 
-body.high-contrast a {
-  text-decoration: underline !important;
-  color: #ffff00 !important;
+body.theme-black-yellow * {
+  background-color: #ffff00 !important;
+  color: #000000 !important;
+  border-color: #000000 !important;
 }
 
-/* Focus w kontraście */
-body.high-contrast button:hover svg,
-body.high-contrast a:hover svg,
-body.high-contrast select:hover~svg,
-/* Ikona w selectach */
-body.high-contrast .group:hover svg {
-  /* Ikona w kartach na Home */
-  filter: none !important;
-  /* Wyłącz grayscale */
+/* AKTYWNY / HOVER (Inwersja) */
+body.theme-black-yellow button:hover,
+body.theme-black-yellow a:hover,
+body.theme-black-yellow select:hover,
+body.theme-black-yellow input:hover,
+body.theme-black-yellow .group:hover,
+body.theme-black-yellow .active-wcag-btn {
+  background-color: #000000 !important;
+  color: #ffff00 !important;
+  border-color: #000000 !important;
+}
+
+body.theme-black-yellow button:hover *,
+body.theme-black-yellow a:hover *,
+body.theme-black-yellow .active-wcag-btn * {
+  color: #ffff00 !important;
   stroke: #ffff00 !important;
-  /* Wymuś czarny obrys */
-  color: #ffff00 !important;
-  /* Wymuś czarny kolor */
 }
 
-/* Dodatkowo: Aktywne inputy w kontraście powinny mieć czarny tekst na żółtym tle */
-body.high-contrast input:focus,
-body.high-contrast textarea:focus,
-body.high-contrast select:focus {
-  background-color: #ffff00 !important;
+/* Focus (Tutaj musi być Czarny, bo tło jest żółte!) */
+body.theme-black-yellow *:focus-visible {
+  outline: 4px solid #000000 !important;
+  outline-offset: 4px !important;
+}
+
+
+/* ==========================================================================
+   MOTYW 3: CZARNY NA BIAŁYM (theme-black-white)
+   ========================================================================== */
+body.theme-black-white {
+  background-color: #ffffff !important;
   color: #000000 !important;
-  border-color: #ffffff !important;
-  /* Biała ramka dla odróżnienia */
+}
+
+body.theme-black-white * {
+  background-color: #ffffff !important;
+  color: #000000 !important;
+  border-color: #000000 !important;
+}
+
+/* AKTYWNY / HOVER (Inwersja) */
+body.theme-black-white button:hover,
+body.theme-black-white a:hover,
+body.theme-black-white select:hover,
+body.theme-black-white input:hover,
+body.theme-black-white .group:hover,
+body.theme-black-white .active-wcag-btn {
+  background-color: #000000 !important;
+  color: #ffffff !important;
+  border-color: #000000 !important;
+}
+
+body.theme-black-white button:hover *,
+body.theme-black-white a:hover *,
+body.theme-black-white .active-wcag-btn * {
+  color: #ffffff !important;
+  stroke: #ffffff !important;
+}
+
+/* Focus */
+body.theme-black-white *:focus-visible {
+  outline: 4px solid #000000 !important;
+  outline-offset: 4px !important;
 }
