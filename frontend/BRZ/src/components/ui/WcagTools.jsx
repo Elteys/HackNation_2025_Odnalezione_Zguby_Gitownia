@@ -1,48 +1,79 @@
 import React from 'react';
 import { useAccessibility } from '../../context/AccessibilityContext';
-import { Sun, Type } from 'lucide-react';
+import { Sun, Minus, Plus } from 'lucide-react';
 
 const WcagTools = () => {
-    const { toggleContrast, increaseFont, decreaseFont, fontSizeLevel, highContrast } = useAccessibility();
+    const { fontSizeLevel, setFont, contrastMode, setContrast } = useAccessibility();
+
+    const MIN_FONT = 0;
+    const MAX_FONT = 3;
+    const contrastModes = ['normal', 'yellow-black', 'black-yellow', 'black-white'];
+
+    const handleFontChange = (direction) => {
+        const newLevel = fontSizeLevel + direction;
+        if (newLevel >= MIN_FONT && newLevel <= MAX_FONT) {
+            setFont(newLevel);
+        }
+    };
+
+    const cycleContrast = () => {
+        const currentIndex = contrastModes.indexOf(contrastMode);
+        const nextIndex = (currentIndex + 1) % contrastModes.length;
+        setContrast(contrastModes[nextIndex]);
+    };
 
     return (
-        <div className="flex items-center gap-1 bg-slate-100 rounded-full px-2 py-1 border border-slate-200" role="group" aria-label="Narzędzia dostępności">
+        <div
+            className="flex items-center gap-1 sm:gap-2 bg-slate-100/90 backdrop-blur-sm px-3 py-1.5 rounded-full border border-slate-200 shadow-sm"
+            role="group"
+            aria-label="Narzędzia dostępności"
+        >
 
-            {/* Zmniejsz czcionkę */}
+            {/* 1. ZMIANA CZCIONKI */}
+            <div className="flex items-center" role="group" aria-label="Rozmiar tekstu">
+                <button
+                    onClick={() => handleFontChange(-1)}
+                    disabled={fontSizeLevel === MIN_FONT}
+                    className="p-1.5 text-slate-600 hover:text-blue-900 disabled:opacity-30 disabled:cursor-not-allowed transition-colors focus-gov rounded-md"
+                    title="Zmniejsz czcionkę"
+                >
+                    <Minus size={16} strokeWidth={3} />
+                </button>
+
+                <div className="mx-1 flex flex-col items-center justify-center w-6" aria-hidden="true">
+                    <span className="text-xs font-extrabold text-slate-700">A</span>
+                    <div className="flex gap-0.5 mt-0.5">
+                        {[...Array(MAX_FONT)].map((_, i) => (
+                            <div key={i} className={`w-0.5 h-0.5 rounded-full ${i < fontSizeLevel ? 'bg-blue-600' : 'bg-slate-300'}`} />
+                        ))}
+                    </div>
+                </div>
+
+                <button
+                    onClick={() => handleFontChange(1)}
+                    disabled={fontSizeLevel === MAX_FONT}
+                    className="p-1.5 text-slate-600 hover:text-blue-900 disabled:opacity-30 disabled:cursor-not-allowed transition-colors focus-gov rounded-md"
+                    title="Zwiększ czcionkę"
+                >
+                    <Plus size={16} strokeWidth={3} />
+                </button>
+            </div>
+
+            <div className="w-px h-5 bg-slate-300 mx-1 sm:mx-2" />
+
+            {/* 2. KONTRAST (Klasa 'wcag-contrast-toggle' jest kluczowa dla CSS) */}
             <button
-                onClick={decreaseFont}
-                disabled={fontSizeLevel === 0}
-                className="w-8 h-8 flex items-center justify-center text-xs font-bold text-slate-700 hover:bg-white hover:text-blue-900 rounded-full disabled:opacity-30 transition-all focus-gov"
-                aria-label="Zmniejsz czcionkę"
-                title="Zmniejsz czcionkę"
-            >
-                A-
-            </button>
-
-            {/* Zwiększ czcionkę */}
-            <button
-                onClick={increaseFont}
-                disabled={fontSizeLevel === 2}
-                className="w-8 h-8 flex items-center justify-center text-lg font-bold text-slate-700 hover:bg-white hover:text-blue-900 rounded-full disabled:opacity-30 transition-all focus-gov"
-                aria-label="Zwiększ czcionkę"
-                title="Zwiększ czcionkę"
-            >
-                A+
-            </button>
-
-            {/* Separator */}
-            <div className="w-px h-4 bg-slate-300 mx-1"></div>
-
-            {/* Kontrast */}
-            <button
-                onClick={toggleContrast}
-                className={`w-8 h-8 flex items-center justify-center rounded-full transition-all focus-gov ${highContrast ? 'bg-black text-yellow-400 border border-yellow-400' : 'text-slate-700 hover:bg-white hover:text-blue-900'
-                    }`}
-                aria-label={highContrast ? "Wyłącz wysoki kontrast" : "Włącz wysoki kontrast"}
+                onClick={cycleContrast}
+                className="wcag-contrast-toggle flex items-center gap-2 px-2 py-1 rounded-md transition-all focus-gov border-2 border-transparent"
                 title="Zmień kontrast"
+                aria-label={`Zmień kontrast. Aktualny tryb: ${contrastMode}`}
             >
-                <Sun size={18} fill={highContrast ? "currentColor" : "none"} />
+                <Sun size={18} className="icon-sun" fill={contrastMode !== 'normal' ? "currentColor" : "none"} />
+                <span className="hidden lg:inline text-xs font-bold uppercase tracking-wider">
+                    Kontrast
+                </span>
             </button>
+
         </div>
     );
 };

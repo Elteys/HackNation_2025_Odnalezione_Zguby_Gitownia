@@ -1,89 +1,187 @@
-/* 1. NAJWAŻNIEJSZE: Import Tailwinda (Musi być na górze!) */
 @import "tailwindcss";
-
-/* 2. Plugin do animacji */
 @plugin "tailwindcss-animate";
 
-/* 3. Konfiguracja fontów i tła */
 :root {
   font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;
-  font-weight: 400;
 }
 
 body {
   @apply bg-slate-50 text-slate-900 antialiased;
 }
 
-/* 4. UTILITIES: Nasz Focus dla WCAG (Musi być po imporcie Tailwinda) */
 @layer utilities {
   .focus-gov {
-    @apply focus:outline-none focus-visible:ring-4 focus-visible:ring-yellow-400 focus-visible:ring-offset-2 focus-visible:ring-offset-white;
+    @apply focus:outline-none focus-visible:ring-4 focus-visible:ring-yellow-400 focus-visible:ring-offset-2;
   }
 }
 
-/* 5. WYSOKI KONTRAST (Style nadpisujące) */
-/* Ważne: Te style aktywują się TYLKO gdy body ma klasę .high-contrast */
+/* ==========================================================================
+   ZASADY OGÓLNE DLA TRYBÓW KONTRASTOWYCH
+   ========================================================================== */
 
-body.high-contrast {
-  background-color: #000000 !important;
-  color: #ffff00 !important;
+body:not(.theme-normal) img,
+body:not(.theme-normal) video {
+  filter: grayscale(100%) contrast(120%) !important;
 }
 
-body.high-contrast * {
-  background-color: #000000 !important;
-  color: #ffff00 !important;
-  border-color: #ffff00 !important;
+body:not(.theme-normal) svg {
+  stroke: currentColor !important;
+  fill: none !important;
+  color: inherit !important;
+}
+
+body:not(.theme-normal) input,
+body:not(.theme-normal) select,
+body:not(.theme-normal) textarea,
+body:not(.theme-normal) button {
+  border-width: 2px !important;
+  border-style: solid !important;
   box-shadow: none !important;
 }
 
-/* Wyjątki dla obrazków w kontraście */
-body.high-contrast img,
-body.high-contrast svg {
-  background-color: transparent !important;
-  filter: grayscale(100%) contrast(120%);
-}
-
-/* Wyjątki dla inputów i przycisków */
-body.high-contrast button,
-body.high-contrast input,
-body.high-contrast select,
-body.high-contrast textarea {
-  border: 2px solid #ffff00 !important;
+/* -----------------------------------------------------------
+   TRYB 1: ŻÓŁTY NA CZARNYM (theme-yellow-black)
+----------------------------------------------------------- */
+body.theme-yellow-black {
   background-color: #000000 !important;
+  color: #ffff00 !important;
 }
 
-body.high-contrast button:hover {
+body.theme-yellow-black * {
+  background-color: #000000 !important;
+  color: #ffff00 !important;
+  border-color: #ffff00 !important;
+}
+
+/* Focus */
+body.theme-yellow-black *:focus-visible {
+  outline: 4px solid #ffff00 !important;
+  outline-offset: 4px !important;
+}
+
+/* -----------------------------------------------------------
+   TRYB 2: CZARNY NA ŻÓŁTYM (theme-black-yellow)
+----------------------------------------------------------- */
+body.theme-black-yellow {
   background-color: #ffff00 !important;
   color: #000000 !important;
 }
 
-body.high-contrast a {
-  text-decoration: underline !important;
-  color: #ffff00 !important;
+body.theme-black-yellow * {
+  background-color: #ffff00 !important;
+  color: #000000 !important;
+  border-color: #000000 !important;
 }
 
-/* Focus w kontraście */
-body.high-contrast button:hover svg,
-body.high-contrast a:hover svg,
-body.high-contrast select:hover~svg,
-/* Ikona w selectach */
-body.high-contrast .group:hover svg {
-  /* Ikona w kartach na Home */
-  filter: none !important;
-  /* Wyłącz grayscale */
+/* Focus (Czarny na żółtym tle) */
+body.theme-black-yellow *:focus-visible {
+  outline: 4px solid #000000 !important;
+  outline-offset: 4px !important;
+}
+
+/* -----------------------------------------------------------
+   TRYB 3: CZARNY NA BIAŁYM (theme-black-white)
+----------------------------------------------------------- */
+body.theme-black-white {
+  background-color: #ffffff !important;
+  color: #000000 !important;
+}
+
+body.theme-black-white * {
+  background-color: #ffffff !important;
+  color: #000000 !important;
+  border-color: #000000 !important;
+}
+
+/* Focus */
+body.theme-black-white *:focus-visible {
+  outline: 4px solid #000000 !important;
+  outline-offset: 4px !important;
+}
+
+
+/* ==========================================================================
+   HARD OVERRIDES FOR WCAG BUTTON (NAPRAWA IKONY)
+   To gwarantuje, że przycisk kontrastu jest zawsze widoczny!
+   ========================================================================== */
+
+/* 1. Domyślny wygląd (theme-normal) */
+body.theme-normal .wcag-contrast-toggle {
+  color: #475569 !important;
+  /* slate-600 */
+}
+
+body.theme-normal .wcag-contrast-toggle:hover {
+  background-color: #e2e8f0 !important;
+  /* slate-200 */
+  color: #1e3a8a !important;
+  /* blue-900 */
+}
+
+/* 2. Wygląd w ŻÓŁTYM NA CZARNYM */
+/* Przycisk ma być czarny z żółtą ramką i żółtą ikoną */
+body.theme-yellow-black .wcag-contrast-toggle {
+  background-color: #000000 !important;
+  color: #ffff00 !important;
+  border: 2px solid #ffff00 !important;
+}
+
+body.theme-yellow-black .wcag-contrast-toggle svg {
   stroke: #ffff00 !important;
-  /* Wymuś czarny obrys */
   color: #ffff00 !important;
-  /* Wymuś czarny kolor */
 }
 
-/* Dodatkowo: Aktywne inputy w kontraście powinny mieć czarny tekst na żółtym tle */
-body.high-contrast input:focus,
-body.high-contrast textarea:focus,
-body.high-contrast select:focus {
+/* Hover: Odwracamy -> Tło Żółte, Ikona Czarna */
+body.theme-yellow-black .wcag-contrast-toggle:hover {
   background-color: #ffff00 !important;
   color: #000000 !important;
-  border-color: #ffffff !important;
-  /* Biała ramka dla odróżnienia */
+}
+
+body.theme-yellow-black .wcag-contrast-toggle:hover svg {
+  stroke: #000000 !important;
+}
+
+/* 3. Wygląd w CZARNYM NA ŻÓŁTYM */
+/* Przycisk ma być żółty z czarną ramką i czarną ikoną */
+body.theme-black-yellow .wcag-contrast-toggle {
+  background-color: #ffff00 !important;
+  color: #000000 !important;
+  border: 2px solid #000000 !important;
+}
+
+body.theme-black-yellow .wcag-contrast-toggle svg {
+  stroke: #000000 !important;
+  color: #000000 !important;
+}
+
+/* Hover: Odwracamy -> Tło Czarne, Ikona Żółta */
+body.theme-black-yellow .wcag-contrast-toggle:hover {
+  background-color: #000000 !important;
+  color: #ffff00 !important;
+}
+
+body.theme-black-yellow .wcag-contrast-toggle:hover svg {
+  stroke: #ffff00 !important;
+}
+
+/* 4. Wygląd w CZARNYM NA BIAŁYM */
+body.theme-black-white .wcag-contrast-toggle {
+  background-color: #ffffff !important;
+  color: #000000 !important;
+  border: 2px solid #000000 !important;
+}
+
+body.theme-black-white .wcag-contrast-toggle svg {
+  stroke: #000000 !important;
+  color: #000000 !important;
+}
+
+body.theme-black-white .wcag-contrast-toggle:hover {
+  background-color: #000000 !important;
+  color: #ffffff !important;
+}
+
+body.theme-black-white .wcag-contrast-toggle:hover svg {
+  stroke: #ffffff !important;
 }
