@@ -2,7 +2,6 @@
 <!-- Created with Liquid Technologies Online Tools 1.0 (https://www.liquid-technologies.com) -->
 <datasets xmlns="urn:otwarte-dane:harvester:1.13" xsi:schemaLocation="urn:otwarte-dane:harvester:1.13 schema.xsd" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
 
-  <!-- Przykładowy dataset z innych danych (możesz usunąć jeśli nie potrzebny) -->
   <dataset xmlns="">
     <extIdent>sample_dataset</extIdent>
     <intIdent>4858</intIdent>
