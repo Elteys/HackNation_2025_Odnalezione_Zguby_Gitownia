@@ -3,6 +3,7 @@ import { HashRouter as Router, Routes, Route, useLocation } from 'react-router-d
 import { AnimatePresence } from 'framer-motion'; // <--- Import
 import { FormProvider } from './context/FormContext';
 import { AccessibilityProvider } from './context/AccessibilityContext';
+import DetailsPage from './pages/DetailsPage';
 
 // Layout
 import Navbar from './components/layout/Navbar';
@@ -32,6 +33,9 @@ const AnimatedRoutes = () => {
         } />
         <Route path="/podsumowanie" element={
           <PageTransition><SummaryPage /></PageTransition>
+        } />
+        <Route path="/szczegoly/:id" element={
+          <PageTransition><DetailsPage /></PageTransition>
         } />
       </Routes>
     </AnimatePresence>
