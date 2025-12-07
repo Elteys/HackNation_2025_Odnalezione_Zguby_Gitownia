@@ -17,8 +17,11 @@ const port = process.env.PORT || 3001;
 app.use(cors());
 app.use(express.json({ limit: '10mb' }));
 
-const MY_PUBLIC_HOST = process.env.PUBLIC_HOST || `http://localhost:${port}`;
-const FRONTEND_URL = 'http://localhost:3000/#/szczegoly';
+// --- KONFIGURACJA ---
+const MY_PUBLIC_HOST = process.env.PUBLIC_HOST || `https://localhost:${port}`;
+
+// Zmieniamy na link, który podałeś w pytaniu (z hashem #)
+const FRONTEND_URL = 'https://localhost:5173/#/szczegoly'; 
 
 const OFFICE_NAME = "Starostwo_Powiatowe_Gryfino";
 const MASTER_CSV_FILENAME = `${OFFICE_NAME}.csv`;
@@ -32,6 +35,10 @@ const TEMPLATE_XML_PATH = path.join(__dirname, 'template.xml');
 if (!fsSync.existsSync(CSV_DIR)) fsSync.mkdirSync(CSV_DIR, { recursive: true });
 if (!fsSync.existsSync(QR_DIR)) fsSync.mkdirSync(QR_DIR, { recursive: true });
 
+app.use(cors({ origin: '*' }));
+app.use(express.json({ limit: '10mb' }));
+
+// Udostępniamy pliki statycznie
 app.use('/files', express.static(BASE_OUTPUT_DIR));
 
 const CSV_FILE_PATH = path.join(CSV_DIR, MASTER_CSV_FILENAME);
@@ -54,8 +61,14 @@ async function writeRecords(records) {
         "Miejsce", "Lat", "Lon", "CzyOdebrany",
         "Resources", "Tags", "Supplements"
     ];
-    const output = stringify(records, { header: true, columns, quoted: true });
-    await fs.writeFile(CSV_FILE_PATH, output, 'utf8');
+
+    const output = stringify(records, {
+        header: true,
+        columns: columns,
+        quoted: true // Bezpieczeństwo: zawsze w cudzysłowach
+    });
+
+    await fs.writeFile(CSV_FILE_PATH, '\uFEFF' + output, 'utf8');
 }
 
 // --- XML PARSER ---
@@ -136,12 +149,32 @@ app.get('/api/item/:id', async (req, res) => {
         const { id } = req.params;
         const records = await readRecords();
         const item = records.find(r => r.ID === id);
-        if (!item) return res.status(404).json({ error: "Nie znaleziono przedmiotu" });
 
-        res.json({
-            ...item,
+      if (!item) {
+            return res.status(404).json({ error: "Nie znaleziono przedmiotu" });
+        }
+
+        // Mapowanie CSV (wielkie litery) na JSON Frontendu (małe litery, struktura cech)
+        // Frontend oczekuje konkretnej struktury w DetailsPage.jsx
+        const responseData = {
+            id: item.ID,
+            nazwa: item.Nazwa,
+            kategoria: item.Kategoria,
+            opis: item.Opis,
+            data: item.DataZnalezienia,
+            miejsce: item.Miejsce,
+            lat: parseFloat(item.Lat),
+            lng: parseFloat(item.Lon),
+            cechy: {
+                kolor: item.Kolor,
+                marka: item.Marka,
+                stan: item.Stan
+            },
+            // Zwracamy boolean (true/false) zamiast stringa 'true'/'false'
             CzyOdebrany: item.CzyOdebrany === 'true'
-        });
+        };
+
+        res.json(responseData);
 
     } catch (error) {
         console.error("Błąd odczytu:", error);

@@ -24,6 +24,7 @@ dist-ssr
 *.sw?
 .env
 output/*
+public_files/*
 # Certyfikaty SSL
 *.pem
 *-key.pem
