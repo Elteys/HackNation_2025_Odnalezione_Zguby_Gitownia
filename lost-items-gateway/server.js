@@ -12,8 +12,8 @@ const port = process.env.PORT || 3001;
 
 // --- KONFIGURACJA ---
 const MY_PUBLIC_HOST = process.env.PUBLIC_HOST || `http://localhost:${port}`;
-const FRONTEND_URL = 'http://localhost:3000/item'; 
-const OFFICE_NAME = "Starostwo_Powiatowe_Gryfino"; 
+const FRONTEND_URL = 'http://localhost:3000/#/szczegoly'; 
+const OFFICE_NAME = "starostwo_1"; 
 const MASTER_CSV_FILENAME = `${OFFICE_NAME}.csv`;
 
 const BASE_OUTPUT_DIR = path.join(__dirname, 'output');
