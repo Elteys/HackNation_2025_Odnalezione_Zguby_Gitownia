@@ -6,13 +6,15 @@ const fsSync = require('fs');
 const path = require('path');
 const QRCode = require('qrcode');
 const { v4: uuidv4 } = require('uuid');
-const { parse } = require('csv-parse/sync');
-const { stringify } = require('csv-stringify/sync');
+const { parse } = require('csv-parse/sync'); // Nowa biblioteka do czytania
+const { stringify } = require('csv-stringify/sync'); // Nowa biblioteka do zapisu
 
 const app = express();
 const port = process.env.PORT || 3001;
 
+// --- KONFIGURACJA ---
 const MY_PUBLIC_HOST = process.env.PUBLIC_HOST || `http://localhost:${port}`;
+// Zmieniamy na link, który podałeś w pytaniu (z hashem #)
 const FRONTEND_URL = 'http://localhost:3000/#/szczegoly'; 
 
 const OFFICE_NAME = "Starostwo_Powiatowe_Gryfino"; 
@@ -29,23 +31,29 @@ app.use(cors());
 app.use(express.json({ limit: '10mb' }));
 app.use('/files', express.static(BASE_OUTPUT_DIR));
 
+// Ścieżka do głównego pliku
 const CSV_FILE_PATH = path.join(CSV_DIR, MASTER_CSV_FILENAME);
 
+// --- HELPERY DO CSV ---
+
+// Czytanie wszystkich rekordów jako tablica obiektów
 async function readRecords() {
     try {
-        await fs.access(CSV_FILE_PATH);
+        await fs.access(CSV_FILE_PATH); // Sprawdź czy plik istnieje
         const content = await fs.readFile(CSV_FILE_PATH, 'utf8');
         return parse(content, {
-            columns: true,
+            columns: true, // Pierwszy wiersz to nagłówki
             skip_empty_lines: true,
             trim: true
         });
     } catch (e) {
-        return [];
+        return []; // Jeśli plik nie istnieje, zwróć pustą tablicę
     }
 }
 
+// Zapisywanie rekordów z powrotem do pliku
 async function writeRecords(records) {
+    // Definiujemy kolejność kolumn (żeby była zgodna ze standardem)
     const columns = [
         "ID", "Kategoria", "Podkategoria", "Nazwa", "Opis", 
         "Kolor", "Marka", "Stan", "DataZnalezienia", 
@@ -55,12 +63,16 @@ async function writeRecords(records) {
     const output = stringify(records, {
         header: true,
         columns: columns,
-        quoted: true
+        quoted: true // Bezpieczeństwo: zawsze w cudzysłowach
     });
 
     await fs.writeFile(CSV_FILE_PATH, output, 'utf8');
 }
 
+
+// --- ENDPOINTY ---
+
+// 1. OPUBLIKUJ (DODAJ NOWY)
 app.post('/api/publish-data', async (req, res) => {
     try {
         const formData = req.body;
@@ -70,8 +82,10 @@ app.post('/api/publish-data', async (req, res) => {
         const qrName = `qr_${uniqueId}.png`;
         const qrPath = path.join(QR_DIR, qrName);
 
+        // 1. Wczytaj istniejące
         const records = await readRecords();
 
+        // 2. Dodaj nowy rekord
         const newRecord = {
             ID: uniqueId,
             Kategoria: formData.kategoria,
@@ -85,13 +99,15 @@ app.post('/api/publish-data', async (req, res) => {
             Miejsce: formData.miejsce,
             Lat: formData.lat || '',
             Lon: formData.lng || '',
-            CzyOdebrany: 'false'
+            CzyOdebrany: 'false' // Domyślnie false
         };
 
         records.push(newRecord);
 
+        // 3. Zapisz całość
         await writeRecords(records);
 
+        // 4. Generuj QR (Linkuje do: http://localhost:3000/#/szczegoly/UUID)
         const linkToItem = `${FRONTEND_URL}/${uniqueId}`;
         await QRCode.toFile(qrPath, linkToItem);
 
@@ -110,6 +126,7 @@ app.post('/api/publish-data', async (req, res) => {
     }
 });
 
+// 2. POBIERZ POJEDYNCZY REKORD (Dla DetailsPage.jsx)
 app.get('/api/item/:id', async (req, res) => {
     try {
         const { id } = req.params;
@@ -121,6 +138,8 @@ app.get('/api/item/:id', async (req, res) => {
             return res.status(404).json({ error: "Nie znaleziono przedmiotu" });
         }
 
+        // Mapowanie CSV (wielkie litery) na JSON Frontendu (małe litery, struktura cech)
+        // Frontend oczekuje konkretnej struktury w DetailsPage.jsx
         const responseData = {
             id: item.ID,
             nazwa: item.Nazwa,
@@ -133,6 +152,7 @@ app.get('/api/item/:id', async (req, res) => {
                 marka: item.Marka,
                 stan: item.Stan
             },
+            // Zwracamy boolean (true/false) zamiast stringa 'true'/'false'
             CzyOdebrany: item.CzyOdebrany === 'true'
         };
 
@@ -144,6 +164,7 @@ app.get('/api/item/:id', async (req, res) => {
     }
 });
 
+// 3. ZAKTUALIZUJ STATUS (Dla przycisku "ODBIERZ")
 app.post('/api/item/:id/return', async (req, res) => {
     try {
         const { id } = req.params;
@@ -155,8 +176,10 @@ app.post('/api/item/:id/return', async (req, res) => {
             return res.status(404).json({ error: "Nie znaleziono przedmiotu do aktualizacji" });
         }
 
+        // Aktualizacja statusu
         records[index].CzyOdebrany = 'true';
 
+        // Nadpisanie pliku CSV
         await writeRecords(records);
 
         res.json({ success: true, message: "Status zaktualizowany na ODEBRANY" });
