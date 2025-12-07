@@ -1,2 +1,4 @@
 # HackNation_Gitowwnia_2025
-Repozytorium drużyny gitownia HackNation 2025.
+Repozytorium drużyny Gitownia HackNation 2025.
+
+

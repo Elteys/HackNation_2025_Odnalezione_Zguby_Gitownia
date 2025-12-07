@@ -13,11 +13,11 @@ import { analyzeImage } from '../services/aiService';
 import { KATEGORIE, STANY } from '../utils/dictionaries';
 
 const Home = () => {
-	const navigate = useNavigate();
-	const { updateData, setImagePreview } = useFormContext();
-	const fileInputRef = useRef(null);
-	const qrInputRef = useRef(null);
-	const [loading, setLoading] = useState(false);
+    const navigate = useNavigate();
+    const { updateData, setImagePreview } = useFormContext();
+    const fileInputRef = useRef(null);
+    const qrInputRef = useRef(null);
+    const [loading, setLoading] = useState(false);
 
 	const fileToBase64 = (file) =>
 		new Promise((resolve, reject) => {
