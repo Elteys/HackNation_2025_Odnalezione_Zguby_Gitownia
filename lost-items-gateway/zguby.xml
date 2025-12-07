@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
-<datasets xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="sample.xsd">
+<!-- Created with Liquid Technologies Online Tools 1.0 (https://www.liquid-technologies.com) -->
+<datasets xmlns="urn:otwarte-dane:harvester:1.13" xsi:schemaLocation="urn:otwarte-dane:harvester:1.13 schema.xsd" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
 
-  <dataset>
+  <dataset xmlns="">
     <extIdent>sample_dataset</extIdent>
     <intIdent>4858</intIdent>
     <title>
@@ -19,7 +20,40 @@
       <category>SOCI</category>
       <category>GOVE</category>
     </categories>
-    <!-- reszta pozostaje taka sama -->
+    <conditions>
+      <modification>false</modification>
+      <personalData>false</personalData>
+    </conditions>
+    <resources>
+      <resource>
+        <extIdent>sample_resource</extIdent>
+        <url>https://www.example.com/resource.csv</url>
+        <title>
+          <polish>Przykładowy plik CSV</polish>
+        </title>
+        <description>
+          <polish>Plik CSV z przykładowymi danymi.</polish>
+        </description>
+      </resource>
+    </resources>
+    <tags>
+      <tag lang="pl">przykład</tag>
+      <tag lang="en">sample</tag>
+    </tags>
+    <lastUpdateDate>2004-06-05T14:42:20.99</lastUpdateDate>
+    <hasDynamicData>false</hasDynamicData>
+    <hasHighValueData>false</hasHighValueData>
+    <hasHighValueDataFromEuropeanCommissionList>false</hasHighValueDataFromEuropeanCommissionList>
+    <hasResearchData>false</hasResearchData>
+    <supplements>
+      <supplement>
+        <url>https://www.example.com/supplement1.csv</url>
+        <name>
+          <polish>Przykładowy suplement 1</polish>
+        </name>
+        <language>pl</language>
+      </supplement>
+    </supplements>
   </dataset>
 
   <dataset status="published" xmlns="">

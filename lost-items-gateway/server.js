@@ -9,7 +9,7 @@ const { v4: uuidv4 } = require('uuid');
 const { parse } = require('csv-parse/sync');
 const { stringify } = require('csv-stringify/sync');
 const https = require('https');
-const xml2js = require('xml2js'); // Pamiętaj o: npm install xml2js
+const xml2js = require('xml2js'); 
 
 const app = express();
 const port = process.env.PORT || 3001;
@@ -17,7 +17,6 @@ const port = process.env.PORT || 3001;
 const MY_PUBLIC_HOST = process.env.PUBLIC_HOST || `https://localhost:${port}`;
 const FRONTEND_URL = 'https://localhost:5173/#/szczegoly'; 
 
-// ID Starosty ustawione na sztywno (zgodnie z prośbą)
 const OFFICE_ID = "2"; 
 
 const BASE_OUTPUT_DIR = path.join(__dirname, 'public_files');
@@ -34,32 +33,25 @@ app.use('/files', express.static(BASE_OUTPUT_DIR));
 
 async function getCsvFilePath() {
     try {
-        // 1. Wczytaj XML
         const xmlContent = await fs.readFile(XML_PATH, 'utf8');
         
-        // 2. Parsuj XML do JSON
         const parser = new xml2js.Parser({ explicitArray: false, ignoreAttrs: true });
         const result = await parser.parseStringPromise(xmlContent);
 
-        // 3. Znajdź listę datasetów
-        // Uwaga: jeśli jest tylko 1 dataset, xml2js zwraca obiekt, jeśli więcej - tablicę.
         let datasets = result.datasets.dataset;
         if (!Array.isArray(datasets)) {
             datasets = [datasets];
         }
 
-        // 4. Znajdź dataset dla naszego OFFICE_ID (intIdent == 1)
         const targetDataset = datasets.find(d => d.intIdent === OFFICE_ID);
 
         if (!targetDataset) {
             throw new Error(`Nie znaleziono w XML datasetu o ID: ${OFFICE_ID}`);
         }
 
-        // 5. Wyciągnij nazwę pliku z URL
         // URL w XML: https://localhost:3001/api/csv/Starostwo_Powiatowe_Gryfino
-        // Bierzemy to co po ostatnim slashu
         const urlParts = targetDataset.url.split('/');
-        const fileNameBase = urlParts[urlParts.length - 1]; // "Starostwo_Powiatowe_Gryfino"
+        const fileNameBase = urlParts[urlParts.length - 1];
         
         const fileName = `${fileNameBase}.csv`;
         
@@ -69,21 +61,17 @@ async function getCsvFilePath() {
 
     } catch (error) {
         console.error("Błąd podczas czytania konfiguracji z XML:", error);
-        // Fallback w razie błędu XML - żeby serwer nie padł
         return path.join(CSV_DIR, 'backup_data.csv');
     }
 }
 
-// --- ZMODYFIKOWANE HELPERY DO CSV ---
 
-// Czytanie rekordów (teraz pobiera ścieżkę dynamicznie)
 async function readRecords() {
     try {
-        const filePath = await getCsvFilePath(); // Dynamiczna ścieżka
+        const filePath = await getCsvFilePath(); 
         await fs.access(filePath);
         const content = await fs.readFile(filePath, 'utf8');
         
-        // Usuwamy BOM (\uFEFF) jeśli istnieje, żeby nie psuł nagłówków
         const cleanContent = content.charCodeAt(0) === 0xFEFF ? content.slice(1) : content;
 
         return parse(cleanContent, {
@@ -97,9 +85,8 @@ async function readRecords() {
     }
 }
 
-// Zapisywanie rekordów (teraz pobiera ścieżkę dynamicznie)
 async function writeRecords(records) {
-    const filePath = await getCsvFilePath(); // Dynamiczna ścieżka
+    const filePath = await getCsvFilePath();
 
     const columns = [
         "ID", "Kategoria", "Podkategoria", "Nazwa", "Opis", 
@@ -113,7 +100,6 @@ async function writeRecords(records) {
         quoted: true
     });
 
-    // Zapisz z BOM dla poprawnego kodowania polskich znaków w Excelu
     await fs.writeFile(filePath, '\uFEFF' + output, 'utf8');
 }
 
@@ -126,10 +112,8 @@ app.post('/api/publish-data', async (req, res) => {
         const qrName = `qr_${uniqueId}.png`;
         const qrPath = path.join(QR_DIR, qrName);
 
-        // 1. Wczytaj istniejące (z dynamicznego pliku)
         const records = await readRecords();
 
-        // 2. Dodaj nowy rekord
         const newRecord = {
             ID: uniqueId,
             Kategoria: formData.kategoria || '',
@@ -148,14 +132,11 @@ app.post('/api/publish-data', async (req, res) => {
 
         records.push(newRecord);
 
-        // 3. Zapisz całość
         await writeRecords(records);
 
-        // 4. Generuj QR
         const linkToItem = `${FRONTEND_URL}/${uniqueId}`;
         await QRCode.toFile(qrPath, linkToItem);
 
-        // Musimy wiedzieć jaką nazwę pliku odesłać w odpowiedzi
         const filePath = await getCsvFilePath();
         const fileName = path.basename(filePath);
 
@@ -255,16 +236,13 @@ app.get('/api/csv/:office', async (req, res) => {
 });
 
 app.get('/api/zguby', (req, res) => {
-    // 1. Logowanie dla celów debugowania
     console.log(`[INFO] Próba pobrania XML z: ${XML_PATH}`);
 
-    // 2. Sprawdzenie czy plik istnieje
     if (!fsSync.existsSync(XML_PATH)) {
         console.error("[BŁĄD] Plik zguby.xml nie istnieje w podanej ścieżce!");
         return res.status(404).json({ success: false, error: "Nie znaleziono pliku zguby.xml" });
     }
 
-    // 3. Użycie res.download - Express sam ogarnie nagłówki i Content-Type
     res.download(XML_PATH, 'zguby.xml', (err) => {
         if (err) {
             console.error("[BŁĄD] Błąd podczas wysyłania pliku:", err);
