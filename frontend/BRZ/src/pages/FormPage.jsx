@@ -31,22 +31,13 @@ const FormPage = () => {
         });
     };
 
-    // --- NAPRAWA 1: AUTOMATYCZNY RESET PODKATEGORII ---
-    // Ten efekt pilnuje, żeby podkategoria zawsze pasowała do kategorii
     useEffect(() => {
-        // Jeśli nie wybrano kategorii, wyczyść podkategorię
         if (!formData.kategoria) {
             if (formData.podkategoria) updateData('podkategoria', '');
             return;
         }
-
         const dostepnePodkategorie = KATEGORIE[formData.kategoria];
-
-        // Jeśli obecna podkategoria nie pasuje do nowej kategorii -> wyczyść ją
-        // (Chyba że to wartość wpisana przez AI spoza listy, wtedy warunkowo można zostawić, 
-        // ale bezpieczniej jest wyczyścić, żeby user wybrał poprawną)
         if (dostepnePodkategorie && !dostepnePodkategorie.includes(formData.podkategoria)) {
-            // Tu decydujemy: czyścimy zawsze przy zmianie kategorii głównej
             updateData('podkategoria', '');
         }
     }, [formData.kategoria]);
@@ -74,7 +65,6 @@ const FormPage = () => {
 
         if (!formData.nazwa || formData.nazwa.length < 3) newErrors.nazwa = "Wpisz nazwę (min. 3 znaki).";
         if (!formData.kategoria) newErrors.kategoria = "Wybierz kategorię.";
-
         if (!formData.data) newErrors.data = "Data jest wymagana.";
         else if (formData.data > today) newErrors.data = "Data nie może być z przyszłości.";
 
@@ -130,22 +120,37 @@ const FormPage = () => {
     const getInputClasses = (err) => `w-full p-3 rounded-xl transition-all ${err ? 'bg-red-50 border-2 border-red-500 text-red-900' : 'bg-slate-50 border border-slate-400 text-slate-900'} ${focusClasses}`;
 
     return (
-        <div className="max-w-4xl mx-auto px-4 py-6 md:py-10 animate-in slide-in-from-right-8 duration-500">
-            <header className="flex justify-between items-center mb-8 gap-4">
-                <div>
-                    <h1 className="text-3xl font-bold text-slate-900">Szczegóły zguby</h1>
-                    <p className="text-slate-600">Zweryfikuj dane z AI.</p>
+        <div className="max-w-6xl mx-auto w-full md:px-4 md:py-10 animate-in slide-in-from-right-8 duration-500">
+
+            {/* NAGŁÓWEK ZE STRZAŁKĄ (Back Button) */}
+            <header className="flex justify-between items-start mb-6 md:mb-8 gap-4 px-4 md:px-0 pt-6 md:pt-0">
+                <div className="flex items-center gap-3 md:gap-4">
+                    {/* NOWY PRZYCISK POWROTU - STRZAŁKA */}
+                    <button
+                        onClick={() => navigate('/')}
+                        className="p-2 -ml-2 md:ml-0 rounded-full hover:bg-slate-200 text-slate-600 transition-colors focus-gov"
+                        aria-label="Wróć do strony głównej"
+                    >
+                        <ArrowLeft size={28} strokeWidth={2.5} />
+                    </button>
+
+                    <div>
+                        <h1 className="text-2xl md:text-3xl font-bold text-slate-900 leading-tight">Szczegóły zguby</h1>
+                        <p className="text-sm md:text-base text-slate-600">Zweryfikuj dane.</p>
+                    </div>
                 </div>
+
                 {imagePreview && (
-                    <div className="relative">
-                        <img src={imagePreview} alt="AI Scan" className="w-24 h-24 object-cover rounded-xl shadow-md border-2 border-white" />
-                        <span className="absolute -bottom-2 -right-2 bg-green-700 text-white text-xs px-2 py-1 rounded-full font-bold">AI</span>
+                    <div className="relative shrink-0">
+                        <img src={imagePreview} alt="AI Scan" className="w-14 h-14 md:w-20 md:h-20 object-cover rounded-xl shadow-md border-2 border-white" />
+                        <span className="absolute -bottom-2 -right-2 bg-green-700 text-white text-[10px] md:text-xs px-2 py-0.5 rounded-full font-bold">AI</span>
                     </div>
                 )}
             </header>
 
-            <div className="bg-white rounded-2xl shadow-xl border border-slate-200 overflow-hidden">
-                <div className="bg-slate-50 p-6 border-b border-slate-200 grid md:grid-cols-2 gap-6">
+            <div className="bg-white md:rounded-2xl shadow-none md:shadow-xl border-y md:border border-slate-200 overflow-hidden">
+
+                <div className="bg-slate-50 p-4 md:p-6 border-b border-slate-200 grid md:grid-cols-2 gap-4 md:gap-6">
                     <div className="space-y-2">
                         <label htmlFor="kategoria" className="font-bold text-sm">Kategoria *</label>
                         <select
@@ -171,11 +176,6 @@ const FormPage = () => {
                         >
                             <option value="">-- Wybierz --</option>
                             {formData.kategoria && KATEGORIE[formData.kategoria]?.map(sub => <option key={sub} value={sub}>{sub}</option>)}
-
-                            {/* Logika (AI): Pokazujemy opcję z dopiskiem (AI) tylko wtedy, 
-                                gdy obecna wartość NIE znajduje się w słowniku dla wybranej kategorii.
-                                Dzięki temu po zmianie kategorii na inną, ta opcja znika (bo useEffect ją wyczyści).
-                            */}
                             {formData.podkategoria &&
                                 formData.kategoria &&
                                 KATEGORIE[formData.kategoria] &&
@@ -186,7 +186,7 @@ const FormPage = () => {
                     </div>
                 </div>
 
-                <div className="p-6 md:p-8 space-y-6">
+                <div className="p-4 md:p-8 space-y-6">
                     <div className="space-y-2">
                         <label htmlFor="nazwa" className="font-bold text-sm">Nazwa *</label>
                         <input id="nazwa" type="text" className={getInputClasses(errors.nazwa)} value={formData.nazwa} onChange={e => updateData('nazwa', e.target.value)} placeholder="np. Telefon Samsung" />
@@ -194,14 +194,14 @@ const FormPage = () => {
                     </div>
 
                     <div className="space-y-2">
-                        <div className="flex justify-between items-end gap-2">
+                        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-end mb-2 gap-2">
                             <div className="flex flex-col gap-1">
-                                <label className="font-bold text-sm flex items-center gap-2">Opis <span className="bg-blue-100 text-blue-800 text-xs px-2 rounded-full">AI Translator</span></label>
+                                <label className="font-bold text-sm flex items-center gap-2">Opis <span className="bg-blue-100 text-blue-800 text-[10px] px-2 rounded-full">AI Translator</span></label>
                                 <button type="button" onClick={handleManualTranslation} disabled={isTranslating || !formData.opis} className="text-xs flex items-center gap-1 text-blue-600 font-bold hover:text-blue-800 disabled:opacity-50 transition-colors">
                                     {isTranslating ? <>⏳ Tłumaczę...</> : <><Sparkles size={12} /> Przetłumacz automatycznie</>}
                                 </button>
                             </div>
-                            <div className="flex bg-slate-100 p-1 rounded-lg">
+                            <div className="flex bg-slate-100 p-1 rounded-lg self-start sm:self-auto">
                                 {['PL', 'EN', 'UA'].map(lang => (
                                     <button key={lang} onClick={() => setActiveLang(lang)} className={`px-3 py-1 text-xs font-bold rounded ${activeLang === lang ? 'bg-white shadow' : 'text-slate-500'}`}>{lang}</button>
                                 ))}
@@ -214,10 +214,9 @@ const FormPage = () => {
                         </div>
                     </div>
 
-                    <div className="bg-blue-50/50 p-6 rounded-xl border border-blue-200">
+                    <div className="bg-blue-50/50 p-4 md:p-6 rounded-xl border border-blue-200">
                         <h3 className="font-bold text-blue-900 text-sm mb-4 flex items-center gap-2"><Tag size={16} /> Cechy</h3>
                         <div className="grid md:grid-cols-3 gap-4">
-                            {/* NAPRAWA 2: Przywrócone placeholdery */}
                             <div>
                                 <label className="text-xs font-bold block mb-1">KOLOR</label>
                                 <input type="text" className={getInputClasses(null)} value={formData.cechy?.kolor || ''} onChange={e => updateCecha('kolor', e.target.value)} placeholder="np. czarny" />
@@ -254,9 +253,14 @@ const FormPage = () => {
                     </div>
                 </div>
 
-                <div className="bg-slate-50 p-6 flex justify-between border-t">
-                    <button onClick={() => navigate('/')} className="px-6 py-2 border rounded-xl font-bold hover:bg-white flex gap-2 items-center"><ArrowLeft size={20} /> Anuluj</button>
-                    <button onClick={handleNextStep} className="px-8 py-2 bg-blue-900 text-white rounded-xl font-bold hover:bg-blue-800 flex gap-2 items-center">Podsumowanie <ArrowRight size={20} /></button>
+                {/* STOPKA: Tylko jeden przycisk, Anuluj usunięte */}
+                <div className="bg-slate-50 p-4 md:p-6 border-t border-slate-200">
+                    <button
+                        onClick={handleNextStep}
+                        className="w-full bg-blue-900 text-white px-8 py-3.5 rounded-xl font-bold hover:bg-blue-800 flex gap-2 items-center justify-center shadow-lg transition-all focus-gov"
+                    >
+                        Podsumowanie <ArrowRight size={20} />
+                    </button>
                 </div>
             </div>
             <MapModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} currentCoords={currentCoords} onSaveLocation={handleSaveLocation} />

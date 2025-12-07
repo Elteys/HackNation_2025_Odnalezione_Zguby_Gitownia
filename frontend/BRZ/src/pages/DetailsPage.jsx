@@ -88,7 +88,7 @@ const DetailsPage = () => {
 
     // --- GŁÓWNY WIDOK ---
     return (
-        <div className="max-w-3xl mx-auto px-4 py-8 animate-in fade-in duration-500">
+        <div className="max-w-6xl mx-auto px-4 py-8 animate-in fade-in duration-500">
 
             {/* Nawigacja powrotna */}
             <button
