@@ -107,81 +107,58 @@ body.theme-black-white *:focus-visible {
    ========================================================================== */
 
 /* 1. Domyślny wygląd (theme-normal) */
-body.theme-normal .wcag-contrast-toggle {
-  color: #475569 !important;
-  /* slate-600 */
+body:not(.theme-normal) .wcag-btn {
+  /* Resetujemy style Tailwinda */
+  background-color: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+
+  /* Kluczowe: Bierzemy kolor od rodzica (czyli np. żółty na czarnym tle) */
+  color: inherit !important;
 }
 
-body.theme-normal .wcag-contrast-toggle:hover {
-  background-color: #e2e8f0 !important;
-  /* slate-200 */
-  color: #1e3a8a !important;
-  /* blue-900 */
+/* Ikony wewnątrz przycisków */
+body:not(.theme-normal) .wcag-btn svg {
+  stroke: currentColor !important;
+  color: inherit !important;
 }
 
-/* 2. Wygląd w ŻÓŁTYM NA CZARNYM */
-/* Przycisk ma być czarny z żółtą ramką i żółtą ikoną */
-body.theme-yellow-black .wcag-contrast-toggle {
-  background-color: #000000 !important;
-  color: #ffff00 !important;
-  border: 2px solid #ffff00 !important;
+/* 2. EFEKT HOVER (Inwersja) */
+/* Po najechaniu odwracamy kolory (np. z żółtego na czarnym robimy czarny na żółtym) */
+body:not(.theme-normal) .wcag-btn:hover {
+  background-color: currentColor !important;
+  /* Tło bierze kolor tekstu */
+  color: var(--bg-color-trick) !important;
+  /* Tekst musi wziąć kolor tła strony (trik poniżej) */
+  /* Alternatywnie, bezpieczniejsza inwersja filterem: */
+  filter: invert(100%) !important;
 }
 
-body.theme-yellow-black .wcag-contrast-toggle svg {
-  stroke: #ffff00 !important;
-  color: #ffff00 !important;
+/* 3. Wskaźnik poziomu (Literka A i kropki) */
+body:not(.theme-normal) .wcag-indicator span {
+  color: inherit !important;
 }
 
-/* Hover: Odwracamy -> Tło Żółte, Ikona Czarna */
-body.theme-yellow-black .wcag-contrast-toggle:hover {
-  background-color: #ffff00 !important;
-  color: #000000 !important;
+/* Aktywne kropki w kontraście */
+body:not(.theme-normal) .wcag-indicator .active-dot {
+  background-color: currentColor !important;
 }
 
-body.theme-yellow-black .wcag-contrast-toggle:hover svg {
-  stroke: #000000 !important;
+/* Nieaktywne kropki w kontraście (lekko przezroczyste) */
+body:not(.theme-normal) .wcag-indicator .inactive-dot {
+  background-color: currentColor !important;
+  opacity: 0.3 !important;
 }
 
-/* 3. Wygląd w CZARNYM NA ŻÓŁTYM */
-/* Przycisk ma być żółty z czarną ramką i czarną ikoną */
-body.theme-black-yellow .wcag-contrast-toggle {
-  background-color: #ffff00 !important;
-  color: #000000 !important;
-  border: 2px solid #000000 !important;
+/* Separator pionowy */
+body:not(.theme-normal) .separator {
+  background-color: currentColor !important;
 }
 
-body.theme-black-yellow .wcag-contrast-toggle svg {
-  stroke: #000000 !important;
-  color: #000000 !important;
-}
-
-/* Hover: Odwracamy -> Tło Czarne, Ikona Żółta */
-body.theme-black-yellow .wcag-contrast-toggle:hover {
-  background-color: #000000 !important;
-  color: #ffff00 !important;
-}
-
-body.theme-black-yellow .wcag-contrast-toggle:hover svg {
-  stroke: #ffff00 !important;
-}
-
-/* 4. Wygląd w CZARNYM NA BIAŁYM */
-body.theme-black-white .wcag-contrast-toggle {
-  background-color: #ffffff !important;
-  color: #000000 !important;
-  border: 2px solid #000000 !important;
-}
-
-body.theme-black-white .wcag-contrast-toggle svg {
-  stroke: #000000 !important;
-  color: #000000 !important;
-}
-
-body.theme-black-white .wcag-contrast-toggle:hover {
-  background-color: #000000 !important;
-  color: #ffffff !important;
-}
-
-body.theme-black-white .wcag-contrast-toggle:hover svg {
-  stroke: #ffffff !important;
+/* Disabled state */
+body:not(.theme-normal) .wcag-btn:disabled {
+  opacity: 0.3 !important;
+  cursor: not-allowed;
+  filter: none !important;
+  /* Wyłącz hover effect */
 }
