@@ -6,13 +6,17 @@ const fsSync = require('fs');
 const path = require('path');
 const QRCode = require('qrcode');
 const { v4: uuidv4 } = require('uuid');
+const { parse } = require('csv-parse/sync'); // Nowa biblioteka do czytania
+const { stringify } = require('csv-stringify/sync'); // Nowa biblioteka do zapisu
 
 const app = express();
 const port = process.env.PORT || 3001;
 
 // --- KONFIGURACJA ---
 const MY_PUBLIC_HOST = process.env.PUBLIC_HOST || `http://localhost:${port}`;
-const FRONTEND_URL = 'http://localhost:3000/item'; 
+// Zmieniamy na link, który podałeś w pytaniu (z hashem #)
+const FRONTEND_URL = 'http://localhost:3000/#/szczegoly'; 
+
 const OFFICE_NAME = "Starostwo_Powiatowe_Gryfino"; 
 const MASTER_CSV_FILENAME = `${OFFICE_NAME}.csv`;
 
@@ -27,43 +31,48 @@ app.use(cors());
 app.use(express.json({ limit: '10mb' }));
 app.use('/files', express.static(BASE_OUTPUT_DIR));
 
-// --- GENERATORY CSV ---
+// Ścieżka do głównego pliku
+const CSV_FILE_PATH = path.join(CSV_DIR, MASTER_CSV_FILENAME);
 
-const escapeCSV = (t) => {
-    if (t === null || t === undefined) return '';
-    let val = t.toString();
-    if (val.search(/("|,|\n)/g) >= 0) val = `"${val.replace(/"/g, '""')}"`;
-    return val;
-};
+// --- HELPERY DO CSV ---
 
-// 1. ZMIANA: Dodano "CzyOdebrany" do nagłówka
-function getCSVHeader() {
-    return "ID,Kategoria,Podkategoria,Nazwa,Opis,Kolor,Marka,Stan,DataZnalezienia,Miejsce,Lat,Lon,CzyOdebrany\n";
+// Czytanie wszystkich rekordów jako tablica obiektów
+async function readRecords() {
+    try {
+        await fs.access(CSV_FILE_PATH); // Sprawdź czy plik istnieje
+        const content = await fs.readFile(CSV_FILE_PATH, 'utf8');
+        return parse(content, {
+            columns: true, // Pierwszy wiersz to nagłówki
+            skip_empty_lines: true,
+            trim: true
+        });
+    } catch (e) {
+        return []; // Jeśli plik nie istnieje, zwróć pustą tablicę
+    }
 }
 
-// 2. ZMIANA: Dodano wartość 'false' na końcu wiersza
-function getCSVRow(formData, id) { 
-    const lat = formData.lat || '';
-    const lon = formData.lng || '';
+// Zapisywanie rekordów z powrotem do pliku
+async function writeRecords(records) {
+    // Definiujemy kolejność kolumn (żeby była zgodna ze standardem)
+    const columns = [
+        "ID", "Kategoria", "Podkategoria", "Nazwa", "Opis", 
+        "Kolor", "Marka", "Stan", "DataZnalezienia", 
+        "Miejsce", "Lat", "Lon", "CzyOdebrany"
+    ];
 
-    return [
-        id,
-        escapeCSV(formData.kategoria), 
-        escapeCSV(formData.podkategoria),
-        escapeCSV(formData.nazwa), 
-        escapeCSV(formData.opis), 
-        escapeCSV(formData.cechy?.kolor),
-        escapeCSV(formData.cechy?.marka), 
-        escapeCSV(formData.cechy?.stan),
-        escapeCSV(formData.data), 
-        escapeCSV(formData.miejsce),
-        escapeCSV(lat),
-        escapeCSV(lon),
-        escapeCSV('false') // <--- Tutaj dodajemy domyślną wartość "false"
-    ].join(",") + "\n";
+    const output = stringify(records, {
+        header: true,
+        columns: columns,
+        quoted: true // Bezpieczeństwo: zawsze w cudzysłowach
+    });
+
+    await fs.writeFile(CSV_FILE_PATH, output, 'utf8');
 }
 
-// --- ENDPOINT ---
+
+// --- ENDPOINTY ---
+
+// 1. OPUBLIKUJ (DODAJ NOWY)
 app.post('/api/publish-data', async (req, res) => {
     try {
         const formData = req.body;
@@ -71,27 +80,34 @@ app.post('/api/publish-data', async (req, res) => {
 
         const uniqueId = uuidv4();
         const qrName = `qr_${uniqueId}.png`;
-
-        const csvPath = path.join(CSV_DIR, MASTER_CSV_FILENAME);
         const qrPath = path.join(QR_DIR, qrName);
 
-        let fileExists = false;
-        try {
-            await fs.access(csvPath);
-            fileExists = true;
-        } catch {
-            fileExists = false;
-        }
+        // 1. Wczytaj istniejące
+        const records = await readRecords();
 
-        const rowContent = getCSVRow(formData, uniqueId);
+        // 2. Dodaj nowy rekord
+        const newRecord = {
+            ID: uniqueId,
+            Kategoria: formData.kategoria,
+            Podkategoria: formData.podkategoria,
+            Nazwa: formData.nazwa,
+            Opis: formData.opis,
+            Kolor: formData.cechy?.kolor,
+            Marka: formData.cechy?.marka,
+            Stan: formData.cechy?.stan,
+            DataZnalezienia: formData.data,
+            Miejsce: formData.miejsce,
+            Lat: formData.lat || '',
+            Lon: formData.lng || '',
+            CzyOdebrany: 'false' // Domyślnie false
+        };
 
-        if (fileExists) {
-            await fs.appendFile(csvPath, rowContent, 'utf8');
-        } else {
-            const header = getCSVHeader();
-            await fs.writeFile(csvPath, header + rowContent, 'utf8');
-        }
+        records.push(newRecord);
 
+        // 3. Zapisz całość
+        await writeRecords(records);
+
+        // 4. Generuj QR (Linkuje do: http://localhost:3000/#/szczegoly/UUID)
         const linkToItem = `${FRONTEND_URL}/${uniqueId}`;
         await QRCode.toFile(qrPath, linkToItem);
 
@@ -105,12 +121,76 @@ app.post('/api/publish-data', async (req, res) => {
         });
 
     } catch (error) {
-        console.error("Błąd:", error);
+        console.error("Błąd zapisu:", error);
         res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// 2. POBIERZ POJEDYNCZY REKORD (Dla DetailsPage.jsx)
+app.get('/api/item/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const records = await readRecords();
+        
+        const item = records.find(r => r.ID === id);
+
+        if (!item) {
+            return res.status(404).json({ error: "Nie znaleziono przedmiotu" });
+        }
+
+        // Mapowanie CSV (wielkie litery) na JSON Frontendu (małe litery, struktura cech)
+        // Frontend oczekuje konkretnej struktury w DetailsPage.jsx
+        const responseData = {
+            id: item.ID,
+            nazwa: item.Nazwa,
+            kategoria: item.Kategoria,
+            opis: item.Opis,
+            data: item.DataZnalezienia,
+            miejsce: item.Miejsce,
+            cechy: {
+                kolor: item.Kolor,
+                marka: item.Marka,
+                stan: item.Stan
+            },
+            // Zwracamy boolean (true/false) zamiast stringa 'true'/'false'
+            CzyOdebrany: item.CzyOdebrany === 'true'
+        };
+
+        res.json(responseData);
+
+    } catch (error) {
+        console.error("Błąd odczytu:", error);
+        res.status(500).json({ error: "Błąd serwera podczas szukania w CSV" });
+    }
+});
+
+// 3. ZAKTUALIZUJ STATUS (Dla przycisku "ODBIERZ")
+app.post('/api/item/:id/return', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const records = await readRecords();
+
+        const index = records.findIndex(r => r.ID === id);
+        
+        if (index === -1) {
+            return res.status(404).json({ error: "Nie znaleziono przedmiotu do aktualizacji" });
+        }
+
+        // Aktualizacja statusu
+        records[index].CzyOdebrany = 'true';
+
+        // Nadpisanie pliku CSV
+        await writeRecords(records);
+
+        res.json({ success: true, message: "Status zaktualizowany na ODEBRANY" });
+
+    } catch (error) {
+        console.error("Błąd aktualizacji:", error);
+        res.status(500).json({ error: "Nie udało się zaktualizować CSV" });
     }
 });
 
 app.listen(port, () => {
     console.log(`Serwer działa na porcie ${port}`);
-    console.log(`Rejestr (CSV): ${MASTER_CSV_FILENAME}`);
+    console.log(`Baza danych (CSV): ${CSV_FILE_PATH}`);
 });
