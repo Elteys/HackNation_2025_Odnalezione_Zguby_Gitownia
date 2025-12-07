@@ -10,6 +10,22 @@ const FormPage = () => {
     const { formData, updateData, imagePreview } = useFormContext();
     const navigate = useNavigate();
 
+    const resetForm = () => {
+        updateData({
+            nazwa: '',
+            opis: '',
+            opisEN: '',
+            opisUA: '',
+            kategoria: '',
+            podkategoria: '',
+            data: '',
+            miejsce: '',
+            lat: 52.2297,
+            lng: 21.0122,
+            cechy: { kolor: '', marka: '', stan: '' }
+        });
+    };
+
     const [errors, setErrors] = useState({});
     const [activeLang, setActiveLang] = useState('PL');
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -127,7 +143,10 @@ const FormPage = () => {
                 <div className="flex items-center gap-3 md:gap-4">
                     {/* NOWY PRZYCISK POWROTU - STRZAŁKA */}
                     <button
-                        onClick={() => navigate('/')}
+                        onClick={() => {
+                            resetForm();   // wyczyść formularz
+                            navigate('/'); // przejdź na stronę główną
+                        }}
                         className="p-2 -ml-2 md:ml-0 rounded-full hover:bg-slate-200 text-slate-600 transition-colors focus-gov"
                         aria-label="Wróć do strony głównej"
                     >
@@ -196,23 +215,70 @@ const FormPage = () => {
                     <div className="space-y-2">
                         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-end mb-2 gap-2">
                             <div className="flex flex-col gap-1">
-                                <label className="font-bold text-sm flex items-center gap-2">Opis <span className="bg-blue-100 text-blue-800 text-[10px] px-2 rounded-full">AI Translator</span></label>
-                                <button type="button" onClick={handleManualTranslation} disabled={isTranslating || !formData.opis} className="text-xs flex items-center gap-1 text-blue-600 font-bold hover:text-blue-800 disabled:opacity-50 transition-colors">
-                                    {isTranslating ? <>⏳ Tłumaczę...</> : <><Sparkles size={12} /> Przetłumacz automatycznie</>}
-                                </button>
+                                <label className="font-bold text-sm flex items-center gap-2">
+                                    Opis <span className="bg-blue-100 text-blue-800 text-[10px] px-2 rounded-full">AI Translator</span>
+                                </label>
                             </div>
                             <div className="flex bg-slate-100 p-1 rounded-lg self-start sm:self-auto">
                                 {['PL', 'EN', 'UA'].map(lang => (
-                                    <button key={lang} onClick={() => setActiveLang(lang)} className={`px-3 py-1 text-xs font-bold rounded ${activeLang === lang ? 'bg-white shadow' : 'text-slate-500'}`}>{lang}</button>
+                                    <button
+                                        key={lang}
+                                        onClick={async () => {
+                                            setActiveLang(lang);
+
+                                            if (lang === 'PL') return; // nie tłumaczymy polskiego
+                                            if (!formData.opis || formData.opis.length < 3) {
+                                                alert("Najpierw wpisz opis po polsku!");
+                                                return;
+                                            }
+
+                                            setIsTranslating(true);
+                                            try {
+                                                const result = await generateTranslations(formData.opis);
+                                                if (lang === 'EN') updateData({ opisEN: result.en });
+                                                if (lang === 'UA') updateData({ opisUA: result.ua });
+                                            } catch (error) {
+                                                alert("Błąd podczas tłumaczenia.");
+                                            } finally {
+                                                setIsTranslating(false);
+                                            }
+                                        }}
+                                        className={`px-3 py-1 text-xs font-bold rounded ${activeLang === lang ? 'bg-white shadow' : 'text-slate-500'}`}
+                                        disabled={isTranslating}
+                                    >
+                                        {lang}
+                                    </button>
                                 ))}
                             </div>
                         </div>
                         <div className="relative">
-                            <textarea id="opis" rows="5" className={`${getInputClasses(null)} ${activeLang !== 'PL' ? 'hidden' : ''}`} value={formData.opis} onChange={e => updateData('opis', e.target.value)} placeholder="Wpisz opis po polsku..." />
-                            <textarea id="opisEN" rows="5" className={`${getInputClasses(null)} ${activeLang !== 'EN' ? 'hidden' : ''}`} value={formData.opisEN} onChange={e => updateData('opisEN', e.target.value)} placeholder="Angielski (wygeneruje się automatycznie)..." />
-                            <textarea id="opisUA" rows="5" className={`${getInputClasses(null)} ${activeLang !== 'UA' ? 'hidden' : ''}`} value={formData.opisUA} onChange={e => updateData('opisUA', e.target.value)} placeholder="Ukraiński (wygeneruje się automatycznie)..." />
+                            <textarea
+                                id="opis"
+                                rows="5"
+                                className={`${getInputClasses(null)} ${activeLang !== 'PL' ? 'hidden' : ''}`}
+                                value={formData.opis}
+                                onChange={e => updateData('opis', e.target.value)}
+                                placeholder="Wpisz opis po polsku..."
+                            />
+                            <textarea
+                                id="opisEN"
+                                rows="5"
+                                className={`${getInputClasses(null)} ${activeLang !== 'EN' ? 'hidden' : ''}`}
+                                value={formData.opisEN}
+                                onChange={e => updateData('opisEN', e.target.value)}
+                                placeholder="Angielski (wygeneruje się automatycznie)..."
+                            />
+                            <textarea
+                                id="opisUA"
+                                rows="5"
+                                className={`${getInputClasses(null)} ${activeLang !== 'UA' ? 'hidden' : ''}`}
+                                value={formData.opisUA}
+                                onChange={e => updateData('opisUA', e.target.value)}
+                                placeholder="Ukraiński (wygeneruje się automatycznie)..."
+                            />
                         </div>
                     </div>
+
 
                     <div className="bg-blue-50/50 p-4 md:p-6 rounded-xl border border-blue-200">
                         <h3 className="font-bold text-blue-900 text-sm mb-4 flex items-center gap-2"><Tag size={16} /> Cechy</h3>
