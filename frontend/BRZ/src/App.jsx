@@ -1,6 +1,6 @@
 import React from 'react';
 import { HashRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
-import { AnimatePresence } from 'framer-motion'; // <--- Import
+import { AnimatePresence } from 'framer-motion'; 
 import { FormProvider } from './context/FormContext';
 import { AccessibilityProvider } from './context/AccessibilityContext';
 import DetailsPage from './pages/DetailsPage';
@@ -14,8 +14,7 @@ import Home from './pages/Home';
 import FormPage from './pages/FormPage';
 import SummaryPage from './pages/SummaryPage';
 
-// Transition Wrapper
-import PageTransition from './components/layout/PageTransition'; // <--- Import
+import PageTransition from './components/layout/PageTransition'; 
 
 // Osobny komponent dla Routes, żeby użyć useLocation()
 const AnimatedRoutes = () => {

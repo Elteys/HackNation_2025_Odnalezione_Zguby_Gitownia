@@ -14,7 +14,6 @@ const xml2js = require('xml2js'); // Pamiętaj o: npm install xml2js
 const app = express();
 const port = process.env.PORT || 3001;
 
-// --- KONFIGURACJA ---
 const MY_PUBLIC_HOST = process.env.PUBLIC_HOST || `https://localhost:${port}`;
 const FRONTEND_URL = 'https://localhost:5173/#/szczegoly'; 
 
@@ -24,9 +23,8 @@ const OFFICE_ID = "2";
 const BASE_OUTPUT_DIR = path.join(__dirname, 'public_files');
 const CSV_DIR = path.join(BASE_OUTPUT_DIR, 'csv');
 const QR_DIR = path.join(BASE_OUTPUT_DIR, 'qr');
-const XML_PATH = path.join(__dirname, 'zguby.xml'); // Ścieżka do pliku XML
+const XML_PATH = path.join(__dirname, 'zguby.xml');
 
-// Upewnij się, że katalogi istnieją
 if (!fsSync.existsSync(CSV_DIR)) fsSync.mkdirSync(CSV_DIR, { recursive: true });
 if (!fsSync.existsSync(QR_DIR)) fsSync.mkdirSync(QR_DIR, { recursive: true });
 
@@ -34,7 +32,6 @@ app.use(cors({ origin: '*' }));
 app.use(express.json({ limit: '10mb' }));
 app.use('/files', express.static(BASE_OUTPUT_DIR));
 
-// --- NOWA FUNKCJA: POBIERZ ŚCIEŻKĘ DO PLIKU CSV Z XML ---
 async function getCsvFilePath() {
     try {
         // 1. Wczytaj XML
@@ -120,10 +117,6 @@ async function writeRecords(records) {
     await fs.writeFile(filePath, '\uFEFF' + output, 'utf8');
 }
 
-
-// --- ENDPOINTY ---
-
-// 1. OPUBLIKUJ (DODAJ NOWY)
 app.post('/api/publish-data', async (req, res) => {
     try {
         const formData = req.body;
@@ -181,7 +174,6 @@ app.post('/api/publish-data', async (req, res) => {
     }
 });
 
-// 2. POBIERZ POJEDYNCZY REKORD
 app.get('/api/item/:id', async (req, res) => {
     try {
         const { id } = req.params;
@@ -218,7 +210,6 @@ app.get('/api/item/:id', async (req, res) => {
     }
 });
 
-// 3. ZAKTUALIZUJ STATUS
 app.post('/api/item/:id/return', async (req, res) => {
     try {
         const { id } = req.params;
@@ -277,7 +268,6 @@ app.get('/api/zguby', (req, res) => {
     res.download(XML_PATH, 'zguby.xml', (err) => {
         if (err) {
             console.error("[BŁĄD] Błąd podczas wysyłania pliku:", err);
-            // Sprawdzamy, czy nagłówki nie zostały już wysłane, żeby nie zawiesić serwera
             if (!res.headersSent) {
                 res.status(500).send("Błąd serwera przy pobieraniu pliku.");
             }
@@ -286,7 +276,6 @@ app.get('/api/zguby', (req, res) => {
 });
 
 
-// URUCHAMIANIE SERWERA HTTPS
 try {
     const httpsOptions = {
         key: fsSync.readFileSync(path.join(__dirname, 'localhost-key.pem')),
@@ -296,7 +285,6 @@ try {
     https.createServer(httpsOptions, app).listen(port, async () => {
         console.log(`Bezpieczny serwer HTTPS działa na porcie ${port}`);
         console.log(`Weryfikacja XML...`);
-        // Testowe wywołanie przy starcie, żeby sprawdzić czy XML jest OK
         await getCsvFilePath();
     });
 } catch (error) {
